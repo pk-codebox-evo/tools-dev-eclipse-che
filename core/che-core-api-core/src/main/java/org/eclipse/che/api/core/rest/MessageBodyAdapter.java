@@ -14,7 +14,6 @@ import com.google.common.annotations.Beta;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 
 /**
  * Adapts an entity stream in an implementation specific way.
@@ -36,20 +35,18 @@ public interface MessageBodyAdapter {
      * if {@link #adapt(InputStream)} is called.
      *
      * @param type
-     *         the {@code type}
-     * @param genericType
-     *         the {@code genericType}
+     *         the {@code type} processed
      * @return true if the entity may be adapted by given adapter
      */
-    boolean canAdapt(Class<?> type, Type genericType);
+    boolean canAdapt(Class<?> type);
 
     /**
      * Adapts entity stream to a new one, if necessary.
-     * It is expected that caller checked that {@link #canAdapt(Class, Type)}
+     * It is expected that caller checked that {@link #canAdapt(Class)}
      * returned true before invoking this method.
      *
      * @param entityStream
-     *         an entity stream processed by {@link CheJsonProvider#readFrom}
+     *         an entity stream
      * @return a new stream with an adapted data or the same {@code entityStream}
      * if there is nothing to adapt
      */

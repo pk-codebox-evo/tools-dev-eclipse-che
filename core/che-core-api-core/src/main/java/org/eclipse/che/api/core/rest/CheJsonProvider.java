@@ -55,16 +55,13 @@ import java.util.Set;
 @Consumes({MediaType.APPLICATION_JSON})
 public class CheJsonProvider<T> implements MessageBodyReader<T>, MessageBodyWriter<T> {
 
-    private final Set<Class>                 ignoredClasses;
-    private final MessageBodyAdapterProvider adapterProvider;
-    private final JsonEntityProvider         delegate;
+    private final Set<Class>         ignoredClasses;
+    private final JsonEntityProvider delegate;
 
     @Inject
-    public CheJsonProvider(@Nullable @Named("che.json.ignored_classes") Set<Class> ignoredClasses,
-                           MessageBodyAdapterProvider messageBodyAdapter) {
+    public CheJsonProvider(@Nullable @Named("che.json.ignored_classes") Set<Class> ignoredClasses) {
         this.delegate = new JsonEntityProvider<>();
         this.ignoredClasses = ignoredClasses == null ? new LinkedHashSet<>() : new LinkedHashSet<>(ignoredClasses);
-        this.adapterProvider = messageBodyAdapter;
     }
 
     @SuppressWarnings("unchecked")
@@ -109,10 +106,8 @@ public class CheJsonProvider<T> implements MessageBodyReader<T>, MessageBodyWrit
                       MediaType mediaType,
                       MultivaluedMap<String, String> httpHeaders,
                       InputStream entityStream) throws IOException, WebApplicationException {
-        final MessageBodyAdapter adapter = adapterProvider.getAdapter(type, genericType);
-        final InputStream bodyStream = adapter == null ? entityStream : adapter.adapt(entityStream);
         if (type.isAnnotationPresent(DTO.class)) {
-            return DtoFactory.getInstance().createDtoFromJson(bodyStream, type);
+            return DtoFactory.getInstance().createDtoFromJson(entityStream, type);
         }
         if (type.isAssignableFrom(List.class) && genericType instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType)genericType;
@@ -120,11 +115,11 @@ public class CheJsonProvider<T> implements MessageBodyReader<T>, MessageBodyWrit
             if (elementType instanceof Class) {
                 Class elementClass = (Class)elementType;
                 if (elementClass.isAnnotationPresent(DTO.class)) {
-                    return (T)DtoFactory.getInstance().createListDtoFromJson(bodyStream, elementClass);
+                    return (T)DtoFactory.getInstance().createListDtoFromJson(entityStream, elementClass);
                 }
             }
         }
-        return (T)delegate.readFrom(type, genericType, annotations, mediaType, httpHeaders, bodyStream);
+        return (T)delegate.readFrom(type, genericType, annotations, mediaType, httpHeaders, entityStream);
     }
 
     /**
