@@ -226,7 +226,7 @@ public class WorkspaceManagerTest {
         final WorkspaceImpl res1 = result.get(0);
         assertEquals(res1.getStatus(), STOPPED, "Workspace status wasn't changed from STARTING to STOPPED");
         assertFalse(res1.isTemporary(), "Workspace must be permanent");
-//        assertNotNull(res1.getConfig()
+//        assertNotNull(res1.getWorkspaceConfigObj()
 //                          .getEnvironments()
 //                          .get(0)
 //                          .getMachineConfigs()
@@ -235,7 +235,7 @@ public class WorkspaceManagerTest {
         final WorkspaceImpl res2 = result.get(1);
         assertEquals(res2.getStatus(), RUNNING, "Workspace status wasn't changed to the runtime instance status");
         assertFalse(res2.isTemporary(), "Workspace must be permanent");
-//        assertNotNull(res2.getConfig()
+//        assertNotNull(res2.getWorkspaceConfigObj()
 //                          .getEnvironments()
 //                          .get(0)
 //                          .getMachineConfigs()
@@ -263,7 +263,7 @@ public class WorkspaceManagerTest {
         final WorkspaceImpl res1 = result.get(0);
         assertEquals(res1.getStatus(), RUNNING, "Workspace status wasn't changed to the runtime instance status");
         assertFalse(res1.isTemporary(), "Workspace must be permanent");
-//        assertNotNull(res1.getConfig()
+//        assertNotNull(res1.getWorkspaceConfigObj()
 //                          .getEnvironments()
 //                          .get(0)
 //                          .getMachineConfigs()
@@ -533,7 +533,7 @@ public class WorkspaceManagerTest {
         verify(runtimes, timeout(2000)).start(workspaceCaptor.capture(), anyString(), anyBoolean());
         final WorkspaceImpl captured = workspaceCaptor.getValue();
         assertTrue(captured.isTemporary());
-//        assertNotNull(captured.getConfig()
+//        assertNotNull(captured.getWorkspaceConfigObj()
 //                              .getEnvironments()
 //                              .get(0)
 //                              .getMachineConfigs()

@@ -10,31 +10,47 @@
  *******************************************************************************/
 package org.eclipse.che.api.workspace.server;
 
+import com.google.common.io.CharStreams;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import org.eclipse.che.api.core.BadRequestException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.workspace.WorkspaceConfig;
-import org.eclipse.che.api.core.rest.StringMessageBodyAdapter;
+import org.eclipse.che.api.core.rest.MessageBodyAdapter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.WebApplicationException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.regex.Pattern;
 
+import static java.nio.charset.Charset.defaultCharset;
 import static java.util.regex.Pattern.DOTALL;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 
 /**
+ * Adapts an old format of {@link WorkspaceConfig} to a new one.
+ *
  * @author Yevhenii Voevodin
  */
 @Singleton
-public class WorkspaceConfigMessageBodyAdapter extends StringMessageBodyAdapter {
+public class WorkspaceConfigMessageBodyAdapter implements MessageBodyAdapter {
 
+    /**
+     * Matches those string which contain substring like <b>"environments" : [</b>.
+     * Old format defines "environments" as json array while new format defines
+     * "environments" as json object.
+     */
     private static final Pattern CONTAINS_ENVIRONMENTS_ARRAY_PATTERN = Pattern.compile(".*\"environments\"\\s*:\\s*\\[.*", DOTALL);
 
     @Inject
-    private WorkspaceConfigAdapter configAdapter;
+    private WorkspaceConfigJsonAdapter configAdapter;
 
     @Override
     public boolean canAdapt(Class<?> type) {
@@ -42,19 +58,25 @@ public class WorkspaceConfigMessageBodyAdapter extends StringMessageBodyAdapter 
     }
 
     @Override
-    public String adapt(String body) throws IOException {
-        if (!CONTAINS_ENVIRONMENTS_ARRAY_PATTERN.matcher(body).matches()) {
-            return body;
-        }
-        try {
-            final JsonParser parser = new JsonParser();
-            final JsonElement root = parser.parse(body);
-            if (!root.isJsonObject()) {
-                return body;
+    public InputStream adapt(InputStream entityStream) throws WebApplicationException, IOException {
+        try (Reader r = new InputStreamReader(entityStream)) {
+            final String body = CharStreams.toString(r);
+            if (CONTAINS_ENVIRONMENTS_ARRAY_PATTERN.matcher(body).matches()) {
+                return new ByteArrayInputStream(body.getBytes(defaultCharset()));
             }
-            return configAdapter.adapt(root.getAsJsonObject()).toString();
-        } catch (BadRequestException | ServerException | RuntimeException x) {
-            throw new IOException(x.getMessage(), x);
+            final JsonParser parser = new JsonParser();
+            final JsonElement rootEl = parser.parse(body);
+            if (!rootEl.isJsonObject()) {
+                return new ByteArrayInputStream(body.getBytes(defaultCharset()));
+            }
+            final JsonObject root = configAdapter.adapt(getWorkspaceConfigObj(rootEl.getAsJsonObject()));
+            return new ByteArrayInputStream(root.toString().getBytes(defaultCharset()));
+        } catch (ServerException x) {
+            throw new WebApplicationException(x.getMessage(), x, INTERNAL_SERVER_ERROR);
+        } catch (RuntimeException x) {
+            throw new WebApplicationException(x.getMessage(), x, BAD_REQUEST);
         }
     }
+
+    protected JsonObject getWorkspaceConfigObj(JsonObject root) throws IOException { return root; }
 }

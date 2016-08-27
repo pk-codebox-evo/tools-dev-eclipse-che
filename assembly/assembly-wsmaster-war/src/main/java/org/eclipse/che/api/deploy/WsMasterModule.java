@@ -11,7 +11,6 @@
 package org.eclipse.che.api.deploy;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 
@@ -19,6 +18,8 @@ import org.eclipse.che.api.core.rest.CheJsonProvider;
 import org.eclipse.che.api.core.rest.MessageBodyAdapter;
 import org.eclipse.che.api.core.rest.MessageBodyAdapterInterceptor;
 import org.eclipse.che.api.machine.shared.Constants;
+import org.eclipse.che.api.workspace.server.AbstractWorkspaceConfigMessageBodyAdapter;
+import org.eclipse.che.api.workspace.server.StackMessageBodyAdapter;
 import org.eclipse.che.api.workspace.server.WorkspaceConfigMessageBodyAdapter;
 import org.eclipse.che.api.workspace.server.WorkspaceMessageBodyAdapter;
 import org.eclipse.che.inject.DynaModule;
@@ -109,8 +110,9 @@ public class WsMasterModule extends AbstractModule {
         install(new org.eclipse.che.commons.schedule.executor.ScheduleModule());
 
         final Multibinder<MessageBodyAdapter> adapters = Multibinder.newSetBinder(binder(), MessageBodyAdapter.class);
-        adapters.addBinding().to(WorkspaceMessageBodyAdapter.class);
         adapters.addBinding().to(WorkspaceConfigMessageBodyAdapter.class);
+        adapters.addBinding().to(WorkspaceMessageBodyAdapter.class);
+        adapters.addBinding().to(StackMessageBodyAdapter.class);
 
         final MessageBodyAdapterInterceptor interceptor = new MessageBodyAdapterInterceptor();
         requestInjection(interceptor);

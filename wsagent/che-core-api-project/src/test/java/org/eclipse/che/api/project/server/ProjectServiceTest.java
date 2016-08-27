@@ -464,7 +464,7 @@ public class ProjectServiceTest {
         RegisteredProject project = pm.getProject("new_project");
         assertNotNull(project);
 
-        //ProjectConfig config = project.getConfig();
+        //ProjectConfig config = project.getWorkspaceConfigObj();
 
         assertEquals(project.getDescription(), newProjectConfig.getDescription());
         assertEquals(project.getProjectType().getId(), newProjectConfig.getType());
@@ -514,7 +514,7 @@ public class ProjectServiceTest {
 
         RegisteredProject project = pm.getProject("/testUpdateProject");
         assertNotNull(project);
-        //ProjectConfig config = project.getConfig();
+        //ProjectConfig config = project.getWorkspaceConfigObj();
 
         assertEquals(project.getDescription(), "updated project");
         assertEquals(project.getProjectType().getId(), "testUpdateProject");
@@ -555,7 +555,7 @@ public class ProjectServiceTest {
         assertEquals(response.getStatus(), 200, "Error: " + response.getEntity());
         RegisteredProject project = pm.getProject("not_project");
         assertNotNull(project);
-        //ProjectConfig description = project.getConfig();
+        //ProjectConfig description = project.getWorkspaceConfigObj();
 
         assertEquals(project.getDescription(), "updated project");
         assertEquals(project.getProjectType().getId(), "my_project_type");
@@ -741,7 +741,7 @@ public class ProjectServiceTest {
         RegisteredProject newProject = pm.getProject("new_project");
         assertNotNull(newProject);
 
-        //assertNotNull(newProject.getConfig());
+        //assertNotNull(newProject.getWorkspaceConfigObj());
     }
 
     private void registerImporter(String importType, InputStream zip) throws Exception {

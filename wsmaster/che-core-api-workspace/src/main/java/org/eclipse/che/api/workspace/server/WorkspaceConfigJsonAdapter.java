@@ -16,7 +16,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-import org.eclipse.che.api.core.BadRequestException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.rest.HttpJsonRequestFactory;
 import org.eclipse.che.api.machine.server.recipe.RecipeService;
@@ -157,22 +156,22 @@ import static java.util.Collections.singletonMap;
  * @author Yevhenii Voevodin
  */
 @Singleton
-public class WorkspaceConfigAdapter {
+public class WorkspaceConfigJsonAdapter {
 
     private final HttpJsonRequestFactory httpReqFactory;
 
     @Inject
-    public WorkspaceConfigAdapter(HttpJsonRequestFactory httpReqFactory) {
+    public WorkspaceConfigJsonAdapter(HttpJsonRequestFactory httpReqFactory) {
         this.httpReqFactory = httpReqFactory;
     }
 
-    public JsonObject adapt(JsonObject confSourceObj) throws BadRequestException, ServerException {
+    public JsonObject adapt(JsonObject confSourceObj) throws IllegalArgumentException, ServerException {
         final JsonArray oldEnvironmentsArr = confSourceObj.getAsJsonArray("environments");
         final JsonObject newEnvironmentsObj = new JsonObject();
         for (JsonElement oldEnvEl : oldEnvironmentsArr) {
             final JsonObject oldEnvObj = oldEnvEl.getAsJsonObject();
             if (!oldEnvObj.has("name")) {
-                throw new BadRequestException("Bad format, environment name is missing");
+                throw new IllegalArgumentException("Bad format, environment name is missing");
             }
             final String envName = oldEnvObj.get("name").getAsString();
             newEnvironmentsObj.add(envName, asEnvironment(oldEnvObj, envName));
@@ -182,7 +181,7 @@ public class WorkspaceConfigAdapter {
     }
 
     /** Converts environment from old format to a new one. */
-    private JsonObject asEnvironment(JsonObject oldEnvObj, String envName) throws BadRequestException, ServerException {
+    private JsonObject asEnvironment(JsonObject oldEnvObj, String envName) throws ServerException {
         final JsonObject newEnvObj = new JsonObject();
         // nothing to convert, machine configs are missing, it is up to
         // component which will use adapted data to fail if machines are required
@@ -196,7 +195,7 @@ public class WorkspaceConfigAdapter {
         for (JsonElement oldMachineConfEl : oldEnvObj.get("machineConfigs").getAsJsonArray()) {
             final JsonObject oldMachineConfObj = oldMachineConfEl.getAsJsonObject();
             if (!oldMachineConfObj.has("name")) {
-                throw new BadRequestException(format("Bad format of the machine in environment '%s', machine name is missing",
+                throw new IllegalArgumentException(format("Bad format of the machine in environment '%s', machine name is missing",
                                                      envName));
             }
             final String machineName = oldMachineConfObj.get("name").getAsString();
@@ -214,7 +213,7 @@ public class WorkspaceConfigAdapter {
     }
 
     /** Converts an old machine configuration to a new format. */
-    private static JsonObject asMachine(JsonObject oldMachineConfObj, String envName, String machineName) throws BadRequestException {
+    private static JsonObject asMachine(JsonObject oldMachineConfObj, String envName, String machineName) throws IllegalArgumentException {
         final JsonObject newMachineObj = new JsonObject();
         // If machine is dev machine then new machine must contain ws-agent in agents list
         if (oldMachineConfObj.has("dev")) {
@@ -231,7 +230,7 @@ public class WorkspaceConfigAdapter {
             return newMachineObj;
         }
         if (!oldMachineConfObj.get("servers").isJsonArray()) {
-            throw new BadRequestException(format("Bad format of the servers in machine '%s:%s', servers must be json array",
+            throw new IllegalArgumentException(format("Bad format of the servers in machine '%s:%s', servers must be json array",
                                                  envName,
                                                  machineName));
         }
@@ -239,7 +238,7 @@ public class WorkspaceConfigAdapter {
         for (JsonElement serversEl : oldMachineConfObj.get("servers").getAsJsonArray()) {
             final JsonObject oldServerObj = serversEl.getAsJsonObject();
             if (!oldServerObj.has("ref")) {
-                throw new BadRequestException(format("Bad format of server in machine '%s:%s', server must contain ref",
+                throw new IllegalArgumentException(format("Bad format of server in machine '%s:%s', server must contain ref",
                                                      envName,
                                                      machineName));
             }
@@ -253,17 +252,17 @@ public class WorkspaceConfigAdapter {
     }
 
     /** Converts machine configuration to service. */
-    private Service asService(JsonObject machineObj, String envName, String machineName) throws BadRequestException, ServerException {
+    private Service asService(JsonObject machineObj, String envName, String machineName) throws IllegalArgumentException, ServerException {
         final Service service = new Service();
         // Convert machine source
         if (!machineObj.has("source") || !machineObj.get("source").isJsonObject()) {
-            throw new BadRequestException(format("Bad format, source for machine '%s:%s' is missing",
+            throw new IllegalArgumentException(format("Bad format, source for machine '%s:%s' is missing",
                                                  envName,
                                                  machineName));
         }
         final JsonObject sourceObj = machineObj.getAsJsonObject("source");
         if (!sourceObj.has("type")) {
-            throw new BadRequestException(format("Bad format, machine '%s:%s', type is missing",
+            throw new IllegalArgumentException(format("Bad format, machine '%s:%s', type is missing",
                                                  envName,
                                                  machineName));
         }
@@ -297,7 +296,7 @@ public class WorkspaceConfigAdapter {
         } else if ("image".equals(type)) {
             service.setImage(sourceObj.get("location").getAsString());
         } else {
-            throw new BadRequestException(format("Bad format, type '%s' is not supported", type));
+            throw new IllegalArgumentException(format("Bad format, type '%s' is not supported", type));
         }
         // limits.ram(mb) - service -> mem_limit(b)
         if (machineObj.has("limits")) {
@@ -305,7 +304,7 @@ public class WorkspaceConfigAdapter {
             if (limits.has("ram")) {
                 final Integer ram = tryParse(limits.get("ram").getAsString());
                 if (ram == null || ram < 0) {
-                    throw new BadRequestException(format("Bad format, machine '%s:%s' ram required to be an unsigned integer value",
+                    throw new IllegalArgumentException(format("Bad format, machine '%s:%s' ram required to be an unsigned integer value",
                                                          envName,
                                                          machineName));
                 }

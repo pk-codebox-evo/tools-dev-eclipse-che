@@ -12,26 +12,26 @@ package org.eclipse.che.api.workspace.server;
 
 import com.google.gson.JsonObject;
 
-import org.eclipse.che.api.core.model.workspace.Workspace;
+import org.eclipse.che.api.workspace.shared.stack.Stack;
 
 import javax.inject.Singleton;
 import java.io.IOException;
 
 /**
- * Adapts an old format of {@link Workspace#getConfig()} to a new one.
+ * Adapts {@link Stack#getWorkspaceConfig()} from an old format to a new one.
  *
  * @author Yevhenii Voevodin
  */
 @Singleton
-public class WorkspaceMessageBodyAdapter extends WorkspaceConfigMessageBodyAdapter {
+public class StackMessageBodyAdapter extends WorkspaceConfigMessageBodyAdapter {
 
     @Override
     public boolean canAdapt(Class<?> type) {
-        return Workspace.class.isAssignableFrom(type);
+        return Stack.class.isAssignableFrom(type);
     }
 
     @Override
     protected JsonObject getWorkspaceConfigObj(JsonObject root) throws IOException {
-        return root.getAsJsonObject("config");
+        return root.getAsJsonObject("workspaceConfig");
     }
 }

@@ -12,6 +12,7 @@ package org.eclipse.che.api.core.rest;
 
 import com.google.common.annotations.Beta;
 
+import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -50,5 +51,5 @@ public interface MessageBodyAdapter {
      * @return a new stream with an adapted data or the same {@code entityStream}
      * if there is nothing to adapt
      */
-    InputStream adapt(InputStream entityStream) throws IOException;
+    InputStream adapt(InputStream entityStream) throws WebApplicationException, IOException;
 }

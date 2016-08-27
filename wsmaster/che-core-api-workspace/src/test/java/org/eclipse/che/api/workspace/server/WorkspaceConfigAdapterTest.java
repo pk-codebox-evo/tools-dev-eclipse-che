@@ -11,7 +11,6 @@
 package org.eclipse.che.api.workspace.server;
 
 import com.google.common.io.CharStreams;
-import com.google.common.io.Files;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -46,7 +45,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Tests of {@link WorkspaceConfigAdapter}.
+ * Tests of {@link WorkspaceConfigJsonAdapter}.
  *
  * @author Yevhenii Voevodin
  */
@@ -63,11 +62,11 @@ public class WorkspaceConfigAdapterTest {
     private HttpJsonResponse response;
 
     @InjectMocks
-    private WorkspaceConfigAdapter configAdapter;
+    private WorkspaceConfigJsonAdapter configAdapter;
 
     @BeforeMethod
     private void setUp() throws Exception {
-        configAdapter = new WorkspaceConfigAdapter(httpReqFactory);
+        configAdapter = new WorkspaceConfigJsonAdapter(httpReqFactory);
         final HttpJsonRequest request = mock(HttpJsonRequest.class, new SelfReturningAnswer());
         when(httpReqFactory.fromUrl(any())).thenReturn(request);
         when(request.request()).thenReturn(response);
@@ -156,7 +155,7 @@ public class WorkspaceConfigAdapterTest {
     public void testNotValidWorkspaceConfigAdaptations(String filename) throws Exception {
         final String content = loadContent(INVALID_CONFIGS_DIR_NAME + File.separatorChar + filename);
 
-        new WorkspaceConfigAdapter(httpReqFactory).adapt(new JsonParser().parse(content).getAsJsonObject());
+        new WorkspaceConfigJsonAdapter(httpReqFactory).adapt(new JsonParser().parse(content).getAsJsonObject());
     }
 
     @DataProvider

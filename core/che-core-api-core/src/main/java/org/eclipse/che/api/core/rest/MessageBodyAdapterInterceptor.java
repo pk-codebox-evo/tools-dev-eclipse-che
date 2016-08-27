@@ -18,6 +18,7 @@ import org.aopalliance.intercept.MethodInvocation;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.MessageBodyReader;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -38,7 +39,7 @@ public class MessageBodyAdapterInterceptor implements MethodInterceptor {
 
     /**
      * This interceptor must be bound for the method
-     * {@link CheJsonProvider#readFrom(Class, Type, Annotation[], MediaType, MultivaluedMap, InputStream)}.
+     * {@link MessageBodyReader#readFrom(Class, Type, Annotation[], MediaType, MultivaluedMap, InputStream)}.
      */
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
