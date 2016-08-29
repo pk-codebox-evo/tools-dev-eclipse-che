@@ -61,7 +61,7 @@ public class WorkspaceConfigMessageBodyAdapter implements MessageBodyAdapter {
     public InputStream adapt(InputStream entityStream) throws WebApplicationException, IOException {
         try (Reader r = new InputStreamReader(entityStream)) {
             final String body = CharStreams.toString(r);
-            if (CONTAINS_ENVIRONMENTS_ARRAY_PATTERN.matcher(body).matches()) {
+            if (!CONTAINS_ENVIRONMENTS_ARRAY_PATTERN.matcher(body).matches()) {
                 return new ByteArrayInputStream(body.getBytes(defaultCharset()));
             }
             final JsonParser parser = new JsonParser();
@@ -69,12 +69,16 @@ public class WorkspaceConfigMessageBodyAdapter implements MessageBodyAdapter {
             if (!rootEl.isJsonObject()) {
                 return new ByteArrayInputStream(body.getBytes(defaultCharset()));
             }
-            final JsonObject root = configAdapter.adapt(getWorkspaceConfigObj(rootEl.getAsJsonObject()));
-            return new ByteArrayInputStream(root.toString().getBytes(defaultCharset()));
-        } catch (ServerException x) {
-            throw new WebApplicationException(x.getMessage(), x, INTERNAL_SERVER_ERROR);
-        } catch (RuntimeException x) {
+            final JsonObject workspaceConfObj = getWorkspaceConfigObj(rootEl.getAsJsonObject());
+            if (workspaceConfObj == null) {
+                return new ByteArrayInputStream(body.getBytes(defaultCharset()));
+            }
+            configAdapter.adapt(getWorkspaceConfigObj(rootEl.getAsJsonObject()));
+            return new ByteArrayInputStream(rootEl.toString().getBytes(defaultCharset()));
+        } catch (IllegalArgumentException x) {
             throw new WebApplicationException(x.getMessage(), x, BAD_REQUEST);
+        } catch (ServerException | RuntimeException x) {
+            throw new WebApplicationException(x.getMessage(), x, INTERNAL_SERVER_ERROR);
         }
     }
 
