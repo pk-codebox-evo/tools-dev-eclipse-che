@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,23 +12,19 @@ package org.eclipse.che.plugin.jdb.ide.configuration;
 
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 
-import org.eclipse.che.ide.api.machine.DevMachine;
-import org.eclipse.che.ide.api.machine.MachineServiceClient;
-import org.eclipse.che.api.promises.client.Promise;
 import org.eclipse.che.ide.api.app.AppContext;
 import org.eclipse.che.ide.api.debug.DebugConfiguration;
 import org.eclipse.che.ide.api.debug.DebugConfigurationPage;
-import org.eclipse.che.ide.extension.machine.client.inject.factories.EntityFactory;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.eclipse.che.ide.api.machine.DevMachine;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.testng.MockitoTestNGListener;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 
 import static java.lang.Boolean.TRUE;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -36,7 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /** @author Artem Zatsarynnyi */
-@RunWith(MockitoJUnitRunner.class)
+@Listeners(MockitoTestNGListener.class)
 public class JavaDebugConfigurationPagePresenterTest {
 
     private static final String HOST = "localhost";
@@ -45,13 +41,9 @@ public class JavaDebugConfigurationPagePresenterTest {
     @Mock
     private JavaDebugConfigurationPageView pageView;
     @Mock
-    private MachineServiceClient           machineServiceClient;
-    @Mock
     private AppContext                     appContext;
     @Mock
     private DevMachine                     devMachine;
-    @Mock
-    private EntityFactory                  entityFactory;
 
     @Mock
     private DebugConfiguration configuration;
@@ -59,7 +51,7 @@ public class JavaDebugConfigurationPagePresenterTest {
     @InjectMocks
     private JavaDebugConfigurationPagePresenter pagePresenter;
 
-    @Before
+    @BeforeMethod
     public void setUp() {
         when(configuration.getHost()).thenReturn(HOST);
         when(configuration.getPort()).thenReturn(PORT);
@@ -78,8 +70,6 @@ public class JavaDebugConfigurationPagePresenterTest {
 
     @Test
     public void testGo() throws Exception {
-        when(machineServiceClient.getMachine(anyString(), anyString())).thenReturn(mock(Promise.class));
-
         AcceptsOneWidget container = Mockito.mock(AcceptsOneWidget.class);
 
         pagePresenter.go(container);

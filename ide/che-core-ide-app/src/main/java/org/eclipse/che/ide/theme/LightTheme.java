@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,9 +10,9 @@
  *******************************************************************************/
 package org.eclipse.che.ide.theme;
 
-import org.eclipse.che.ide.api.theme.Theme;
-
 import com.google.inject.Singleton;
+
+import org.eclipse.che.ide.api.theme.Theme;
 
 /**
  * @author Evgen Vidolob
@@ -33,6 +33,11 @@ public class LightTheme implements Theme {
     }
 
     @Override
+    public String backgroundColor() {
+        return "#D6D6D9";
+    }
+
+    @Override
     public String getLogoFill() {
         return "inherit";
     }
@@ -50,6 +55,11 @@ public class LightTheme implements Theme {
     @Override
     public String selectionBackground() {
         return "#C3DEFF";
+    }
+
+    @Override
+    public String inputSelectionBackground() {
+        return "#b1d7fe";
     }
 
     @Override
@@ -328,6 +338,11 @@ public class LightTheme implements Theme {
     }
 
     @Override
+    public String editorPanelBorderColor() {
+        return tabBorderColor();
+    }
+
+    @Override
     public String getEditorBackgroundColor() {
         return "white";
     }
@@ -475,6 +490,11 @@ public class LightTheme implements Theme {
     @Override
     public String completionPopupItemSubtitleTextColor() {
         return "#909090";
+    }
+
+    @Override
+    public String completionPopupItemHighlightTextColor() {
+        return "#1A68AF";
     }
 
     @Override
@@ -1318,6 +1338,11 @@ public class LightTheme implements Theme {
     }
 
     @Override
+    public String notificationPopupWarningBackground() {
+    	return "#F0AD4E";
+    }
+    
+    @Override
     public String notificationPopupPanelShadow() {
         return "0 0 7px rgba(0,0,0,0.2)";
     }
@@ -1336,7 +1361,12 @@ public class LightTheme implements Theme {
     public String notificationPopupIconProgressFill() {
         return "#9b9b9b";
     }
-
+    
+    @Override
+    public String notificationPopupIconWarningFill() {
+    	return "#F0AD4E";
+    }
+    
     @Override
     public String notificationPopupIconSvgFill() {
         return "#FFFFFF";
@@ -1418,11 +1448,6 @@ public class LightTheme implements Theme {
     }
 
     @Override
-    public String toolButtonBorder() {
-        return "1px solid transparent";
-    }
-
-    @Override
     public String toolButtonActiveBorder() {
         return "1px solid #8E8E8E";
     }
@@ -1435,6 +1460,11 @@ public class LightTheme implements Theme {
     @Override
     public String toolButtonActiveBackgroundColor() {
         return "#AFAFB0";
+    }
+
+    @Override
+    public String toolButtonActiveColor() {
+        return "#4eabff";
     }
 
     @Override
@@ -1488,4 +1518,34 @@ public class LightTheme implements Theme {
         return "#e0e0e0";
     }
 
+    /********************************************************************************************
+     *
+     * Popup Loader
+     *
+     ********************************************************************************************/
+
+    @Override
+    public String popupLoaderBackgroundColor() {
+        return "white";
+    }
+
+    @Override
+    public String popupLoaderBorderColor() {
+        return "#466695";
+    }
+
+    @Override
+    public String popupLoaderShadow() {
+        return "0 0 7px rgba(0,0,0,0.2)";
+    }
+
+    @Override
+    public String popupLoaderTitleColor() {
+        return "#353535";
+    }
+
+    @Override
+    public String popupLoaderTextColor() {
+        return "#999999";
+    }
 }

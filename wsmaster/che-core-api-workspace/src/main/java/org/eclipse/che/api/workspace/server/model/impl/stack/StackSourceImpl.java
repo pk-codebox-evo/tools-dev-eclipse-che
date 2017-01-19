@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,9 @@ package org.eclipse.che.api.workspace.server.model.impl.stack;
 
 import org.eclipse.che.api.workspace.shared.stack.StackSource;
 
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import java.util.Objects;
 
 /**
@@ -20,10 +23,16 @@ import java.util.Objects;
  *
  * @author Alexander Andrienko
  */
+@Embeddable
 public class StackSourceImpl implements StackSource {
 
+    @Column(name = "type")
     private String type;
+
+    @Column(name = "origin")
     private String origin;
+
+    public StackSourceImpl() {}
 
     public StackSourceImpl(StackSource stackSource) {
         this(stackSource.getType(), stackSource.getOrigin());
@@ -39,9 +48,17 @@ public class StackSourceImpl implements StackSource {
         return type;
     }
 
+    public void setType(String type) {
+        this.type = type;
+    }
+
     @Override
     public String getOrigin() {
         return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
     }
 
     @Override

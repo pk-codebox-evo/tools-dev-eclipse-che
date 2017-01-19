@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,96 +10,125 @@
  *******************************************************************************/
 package org.eclipse.che.api.workspace.server.model.impl;
 
-import org.eclipse.che.api.core.model.machine.MachineConfig;
-import org.eclipse.che.api.core.model.machine.Recipe;
 import org.eclipse.che.api.core.model.workspace.Environment;
-import org.eclipse.che.api.machine.server.model.impl.MachineConfigImpl;
-import org.eclipse.che.api.machine.server.recipe.RecipeImpl;
+import org.eclipse.che.api.core.model.workspace.EnvironmentRecipe;
+import org.eclipse.che.api.core.model.workspace.ExtendedMachine;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-
-import static java.util.stream.Collectors.toList;
+import java.util.stream.Collectors;
 
 /**
  * Data object for {@link Environment}.
  *
  * @author Yevhenii Voevodin
  */
+@Entity(name = "Environment")
+@Table(name = "environment")
 public class EnvironmentImpl implements Environment {
 
-    private String                  name;
-    private RecipeImpl              recipe;
-    private List<MachineConfigImpl> machineConfigs;
+    @Id
+    @GeneratedValue
+    @Column(name = "id")
+    private Long id;
 
-    public EnvironmentImpl(String name, Recipe recipe, List<? extends MachineConfig> machineConfigs) {
-        this.name = name;
+    @Embedded
+    private EnvironmentRecipeImpl recipe;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "machines_id")
+    @MapKeyColumn(name = "machines_key")
+    private Map<String, ExtendedMachineImpl> machines;
+
+    public EnvironmentImpl() {}
+
+    public EnvironmentImpl(EnvironmentRecipe recipe,
+                           Map<String, ? extends ExtendedMachine> machines) {
         if (recipe != null) {
-            this.recipe = new RecipeImpl(recipe);
+            this.recipe = new EnvironmentRecipeImpl(recipe);
         }
-        if (machineConfigs != null) {
-            this.machineConfigs = machineConfigs.stream()
-                                                .map(MachineConfigImpl::new)
-                                                .collect(toList());
+        if (machines != null) {
+            this.machines = machines.entrySet()
+                                    .stream()
+                                    .collect(Collectors.toMap(Map.Entry::getKey,
+                                                              entry -> new ExtendedMachineImpl(entry.getValue())));
         }
     }
 
     public EnvironmentImpl(Environment environment) {
-        this(environment.getName(), environment.getRecipe(), environment.getMachineConfigs());
+        if (environment.getRecipe() != null) {
+            this.recipe = new EnvironmentRecipeImpl(environment.getRecipe());
+        }
+        if (environment.getMachines() != null) {
+            this.machines = environment.getMachines()
+                                       .entrySet()
+                                       .stream()
+                                       .collect(Collectors.toMap(Map.Entry::getKey,
+                                                                 entry -> new ExtendedMachineImpl(entry.getValue())));
+        }
     }
 
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public Recipe getRecipe() {
+    public EnvironmentRecipeImpl getRecipe() {
         return recipe;
     }
 
-    public void setRecipe(RecipeImpl recipe) {
-        this.recipe = recipe;
+    public void setRecipe(EnvironmentRecipeImpl environmentRecipe) {
+        this.recipe = environmentRecipe;
     }
 
     @Override
-    public List<MachineConfigImpl> getMachineConfigs() {
-        if (machineConfigs == null) {
-            machineConfigs = new ArrayList<>();
+    public Map<String, ExtendedMachineImpl> getMachines() {
+        if (machines == null) {
+            machines = new HashMap<>();
         }
-        return machineConfigs;
+        return machines;
     }
 
-    public void setMachineConfigs(List<MachineConfigImpl> machineConfigs) {
-        this.machineConfigs = machineConfigs;
+    public void setMachines(Map<String, ExtendedMachineImpl> machines) {
+        this.machines = machines;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof EnvironmentImpl)) return false;
-        EnvironmentImpl that = (EnvironmentImpl)o;
-        return Objects.equals(name, that.name) &&
-               Objects.equals(recipe, that.recipe) &&
-               Objects.equals(machineConfigs, that.machineConfigs);
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof EnvironmentImpl)) {
+            return false;
+        }
+        final EnvironmentImpl that = (EnvironmentImpl)obj;
+        return Objects.equals(id, that.id)
+               && Objects.equals(recipe, that.recipe)
+               && getMachines().equals(that.getMachines());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, recipe, machineConfigs);
+        int hash = 7;
+        hash = 31 * hash + Objects.hashCode(id);
+        hash = 31 * hash + Objects.hashCode(recipe);
+        hash = 31 * hash + getMachines().hashCode();
+        return hash;
     }
 
     @Override
     public String toString() {
         return "EnvironmentImpl{" +
-               "name='" + name + '\'' +
+               "id=" + id +
                ", recipe=" + recipe +
-               ", machineConfigs=" + machineConfigs +
+               ", machines=" + machines +
                '}';
     }
 }

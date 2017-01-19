@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,8 +19,8 @@ import com.google.gwt.regexp.shared.RegExp;
  * @author Artem Zatsarynnyi
  */
 public class NameUtils {
-    private static RegExp FILE_NAME    = RegExp.compile("^[\\sA-Za-z0-9_\\-\\.]+$");
-    private static RegExp FOLDER_NAME  = RegExp.compile("^[\\sA-Za-z0-9_\\-\\.]+$");
+    private static RegExp FILE_NAME    = RegExp.compile("^((?![*:\\/\\\\\"?<>|\0]).)+$");
+    private static RegExp FOLDER_NAME  = FILE_NAME;
     private static RegExp PROJECT_NAME = RegExp.compile("^[A-Za-z0-9_\\-\\.]+$");
 
     private NameUtils() {

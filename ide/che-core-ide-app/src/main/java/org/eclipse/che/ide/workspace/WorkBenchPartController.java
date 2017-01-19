@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -36,6 +36,11 @@ public interface WorkBenchPartController {
     void setSize(double size);
 
     /**
+     * Maximizes part stack.
+     */
+    void maximize();
+
+    /**
      * Sets the minimum allowable size for the part.
      * <p/>
      * The splitter cannot be dragged to a position that would make the part
@@ -53,4 +58,11 @@ public interface WorkBenchPartController {
      *         <code>true</code> hides part, <code>false</code> display part
      */
     void setHidden(boolean hidden);
+
+    /**
+     * Return hidden state.
+     *
+     * @return the hidden state
+     */
+    boolean isHidden();
 }

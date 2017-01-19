@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -121,6 +121,22 @@ public interface Document extends ReadOnlyDocument {
      *         the replacement text
      */
     void replace(int offset, int length, String text);
+
+    /**
+     * Replaces the text range with the given replacement contents.
+     *
+     * @param startLine
+     *         start line of the range
+     * @param startChar
+     *         start char of the range
+     * @param endLine
+     *         end line of the range
+     * @param endChar
+     *         end char of the range
+     * @param text
+     *         the replacement text
+     */
+    void replace(int startLine, int startChar, int endLine, int endChar, String text);
 
     void setFile(VirtualFile file);
 

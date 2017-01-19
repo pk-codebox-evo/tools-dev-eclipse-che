@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -89,11 +89,12 @@ public class MultiBindingTest {
         }
     }
 
-    public static interface Service {
+    public interface Service {
     }
 
     @Singleton
     public static class Service1 implements Service {
+        @Override
         public String toString() {
             return "Service1";
         }
@@ -101,6 +102,7 @@ public class MultiBindingTest {
 
     @Singleton
     public static class Service2 implements Service {
+        @Override
         public String toString() {
             return "Service2";
         }
@@ -108,6 +110,7 @@ public class MultiBindingTest {
 
     @Singleton
     public static class Service3 implements Service {
+        @Override
         public String toString() {
             return "Service3";
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,9 +17,19 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Random;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class ZipUtilsTest {
 
@@ -42,11 +52,22 @@ public class ZipUtilsTest {
             zos.closeEntry();
             zos.close();
         }
-
     }
 
     @Test
     public void shouldBeAbleToDetectZipFile() throws IOException {
         Assert.assertTrue(ZipUtils.isZipFile(zipFile));
+    }
+
+
+    @Test
+    public void testGetResources() throws Exception {
+        URL testJar = ZipUtilsTest.class.getResource("/che/che.jar");
+        @SuppressWarnings("unchecked")
+        Consumer<InputStream> consumer = mock(Consumer.class);
+
+        ZipUtils.getResources(new ZipFile(testJar.getFile()), Pattern.compile(".*[//]?codenvy/[^//]+[.]json"), consumer);
+
+        verify(consumer, times(2)).accept(any(InputStream.class));
     }
 }

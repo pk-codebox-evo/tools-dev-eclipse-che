@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,6 +17,7 @@ import com.google.inject.Singleton;
 
 import org.eclipse.che.api.workspace.shared.dto.ProjectConfigDto;
 import org.eclipse.che.ide.Resources;
+import org.eclipse.che.ide.api.event.ng.EditorFileStatusNotificationOperation;
 import org.eclipse.che.ide.api.mvp.View;
 import org.eclipse.che.ide.api.notification.Notification;
 import org.eclipse.che.ide.api.notification.NotificationListener;
@@ -26,8 +27,10 @@ import org.eclipse.che.ide.api.notification.StatusNotification;
 import org.eclipse.che.ide.api.notification.StatusNotification.Status;
 import org.eclipse.che.ide.api.notification.StatusNotificationListener;
 import org.eclipse.che.ide.api.parts.base.BasePresenter;
+import org.eclipse.che.providers.DynaObject;
 import org.vectomatic.dom.svg.ui.SVGResource;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +52,7 @@ import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMod
  * @author Dmitry Shnurenko
  */
 @Singleton
+@DynaObject
 public class NotificationManagerImpl extends BasePresenter implements NotificationManager,
                                                                       NotificationObserver,
                                                                       StatusNotificationListener,
@@ -92,6 +96,11 @@ public class NotificationManagerImpl extends BasePresenter implements Notificati
         this.view.setContainer(nContainer);
         this.view.setTitle(TITLE);
         this.resources = resources;
+    }
+
+    @Inject
+    public void inject(EditorFileStatusNotificationOperation editorFileStatusNotificationOperation) {
+        editorFileStatusNotificationOperation.inject(this);
     }
 
     /** {@inheritDoc} */
@@ -341,12 +350,6 @@ public class NotificationManagerImpl extends BasePresenter implements Notificati
 
     /** {@inheritDoc} */
     @Override
-    public void setVisible(boolean visible) {
-        view.setVisible(visible);
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public SVGResource getTitleImage() {
         return resources.eventsPartIcon();
     }
@@ -380,4 +383,5 @@ public class NotificationManagerImpl extends BasePresenter implements Notificati
             nPopupStack.push(notification);
         }
     }
+
 }

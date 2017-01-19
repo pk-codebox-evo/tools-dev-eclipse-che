@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,8 +12,8 @@ package org.eclipse.che.api.user.server.spi;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
+import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.UnauthorizedException;
 import org.eclipse.che.api.user.server.model.impl.UserImpl;
 
 /**
@@ -33,22 +33,21 @@ import org.eclipse.che.api.user.server.model.impl.UserImpl;
 public interface UserDao {
 
     /**
-     * // TODO remove this method from spi
-     * Authenticates user.
+     * Gets user by email or name and password
      *
-     * @param emailOrAliasOrName
-     *         one of the user identifiers such as email/name/alias
+     * @param emailOrName
+     *         one of user attribute such as email/name(but not id)
      * @param password
      *         password
      * @return user identifier
      * @throws NullPointerException
-     *         when either {@code emailOrAliasOrName} or {@code password} is null
-     * @throws UnauthorizedException
-     *         when user with such {@code aliasOrName} and {@code password} doesn't exist
+     *         when either {@code emailOrName} or {@code password} is null
+     * @throws NotFoundException
+     *         when user with such {@code emailOrName} and {@code password} doesn't exist
      * @throws ServerException
      *         when any other error occurs
      */
-    String authenticate(String emailOrAliasOrName, String password) throws UnauthorizedException, ServerException;
+    UserImpl getByAliasAndPassword(String emailOrName, String password) throws NotFoundException, ServerException;
 
     /**
      * Creates a new user.
@@ -94,12 +93,10 @@ public interface UserDao {
      *         user identifier
      * @throws NullPointerException
      *         when {@code id} is null
-     * @throws ConflictException
-     *         when given user cannot be deleted
      * @throws ServerException
      *         when any other error occurs
      */
-    void remove(String id) throws ServerException, ConflictException;
+    void remove(String id) throws ServerException;
 
     /**
      * Finds user by his alias.
@@ -163,4 +160,28 @@ public interface UserDao {
      *         when any other error occurs
      */
     UserImpl getByEmail(String email) throws NotFoundException, ServerException;
+
+    /**
+     * Gets all users from persistent layer.
+     *
+     * @param maxItems
+     *         the maximum number of users to return
+     * @param skipCount
+     *         the number of users to skip
+     * @return list of users POJO or empty list if no users were found
+     * @throws IllegalArgumentException
+     *         when {@code maxItems} or {@code skipCount} is negative
+     * @throws ServerException
+     *         when any other error occurs
+     */
+    Page<UserImpl> getAll(int maxItems, long skipCount) throws ServerException;
+
+    /**
+     * Get count of all users from persistent layer.
+     *
+     * @return user count
+     * @throws ServerException
+     *         when any error occurs
+     */
+    long getTotalCount() throws ServerException;
 }

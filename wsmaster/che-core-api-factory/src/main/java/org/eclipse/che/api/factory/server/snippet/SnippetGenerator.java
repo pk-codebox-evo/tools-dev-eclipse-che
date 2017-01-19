@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,8 +10,8 @@
  *******************************************************************************/
 package org.eclipse.che.api.factory.server.snippet;
 
-import org.eclipse.che.api.factory.shared.dto.Button;
-import org.eclipse.che.api.factory.shared.dto.Factory;
+import org.eclipse.che.api.core.model.factory.Button;
+import org.eclipse.che.api.core.model.factory.Factory;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.Formatter;
@@ -37,7 +37,7 @@ public class SnippetGenerator {
             throw new IllegalArgumentException("Unable to generate markdown snippet for factory without button");
         }
 
-        if (Button.ButtonType.logo.equals(factory.getButton().getType())) {
+        if (Button.Type.LOGO.equals(factory.getButton().getType())) {
             if (imageId != null && factory.getId() != null) {
                 imgUrl = format("%s/api/factory/%s/image?imgId=%s", baseUrl, factory.getId(), imageId);
             } else {

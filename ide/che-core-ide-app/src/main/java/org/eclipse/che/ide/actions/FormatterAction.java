@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,7 +16,6 @@ import org.eclipse.che.ide.CoreLocalizationConstant;
 import org.eclipse.che.ide.Resources;
 import org.eclipse.che.ide.api.action.AbstractPerspectiveAction;
 import org.eclipse.che.ide.api.action.ActionEvent;
-import org.eclipse.che.ide.api.app.AppContext;
 import org.eclipse.che.ide.api.editor.EditorAgent;
 import org.eclipse.che.ide.api.editor.EditorPartPresenter;
 import org.eclipse.che.ide.api.editor.texteditor.HandlesTextOperations;
@@ -35,12 +34,10 @@ import static org.eclipse.che.ide.workspace.perspectives.project.ProjectPerspect
  */
 public class FormatterAction extends AbstractPerspectiveAction {
 
-    private final AppContext           appContext;
     private final EditorAgent          editorAgent;
 
     @Inject
-    public FormatterAction(AppContext appContext,
-                           EditorAgent editorAgent,
+    public FormatterAction(EditorAgent editorAgent,
                            CoreLocalizationConstant localization,
                            Resources resources) {
         super(singletonList(PROJECT_PERSPECTIVE_ID),
@@ -48,7 +45,6 @@ public class FormatterAction extends AbstractPerspectiveAction {
               localization.formatDescription(),
               null,
               resources.format());
-        this.appContext = appContext;
         this.editorAgent = editorAgent;
     }
 

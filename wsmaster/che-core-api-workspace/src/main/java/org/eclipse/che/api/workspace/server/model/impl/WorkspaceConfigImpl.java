@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,13 +17,25 @@ import org.eclipse.che.api.core.model.workspace.WorkspaceConfig;
 import org.eclipse.che.api.machine.server.model.impl.CommandImpl;
 import org.eclipse.che.commons.annotation.Nullable;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Data object for {@link WorkspaceConfig}.
@@ -31,32 +43,57 @@ import static java.util.stream.Collectors.toList;
  * @author Alexander Garagatyi
  * @author Yevhenii Voevodin
  */
+@Entity(name = "WorkspaceConfig")
+@Table(name = "workspaceconfig")
 public class WorkspaceConfigImpl implements WorkspaceConfig {
 
     public static WorkspaceConfigImplBuilder builder() {
         return new WorkspaceConfigImplBuilder();
     }
 
-    private String                  name;
-    private String                  description;
-    private String                  defaultEnv;
-    private List<CommandImpl>       commands;
+    @Id
+    @GeneratedValue
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "defaultenv", nullable = false)
+    private String defaultEnv;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "commands_id")
+    private List<CommandImpl> commands;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "projects_id")
     private List<ProjectConfigImpl> projects;
-    private List<EnvironmentImpl>   environments;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "environments_id")
+    @MapKeyColumn(name = "environments_key")
+    private Map<String, EnvironmentImpl> environments;
+
+    public WorkspaceConfigImpl() {}
 
     public WorkspaceConfigImpl(String name,
                                String description,
                                String defaultEnv,
                                List<? extends Command> commands,
                                List<? extends ProjectConfig> projects,
-                               List<? extends Environment> environments) {
+                               Map<String, ? extends Environment> environments) {
         this.name = name;
         this.defaultEnv = defaultEnv;
         this.description = description;
         if (environments != null) {
-            this.environments = environments.stream()
-                                            .map(EnvironmentImpl::new)
-                                            .collect(toList());
+            this.environments = environments.entrySet()
+                                            .stream()
+                                            .collect(toMap(Map.Entry::getKey,
+                                                           entry -> new EnvironmentImpl(entry.getValue())));
         }
         if (commands != null) {
             this.commands = commands.stream()
@@ -103,6 +140,10 @@ public class WorkspaceConfigImpl implements WorkspaceConfig {
         return defaultEnv;
     }
 
+    public void setDefaultEnv(String defaultEnv) {
+        this.defaultEnv = defaultEnv;
+    }
+
     @Override
     public List<CommandImpl> getCommands() {
         if (commands == null) {
@@ -128,50 +169,58 @@ public class WorkspaceConfigImpl implements WorkspaceConfig {
     }
 
     @Override
-    public List<EnvironmentImpl> getEnvironments() {
+    public Map<String, EnvironmentImpl> getEnvironments() {
+        if (environments == null) {
+            return new HashMap<>();
+        }
         return environments;
     }
 
-    public Optional<EnvironmentImpl> getEnvironment(String name) {
-        return getEnvironments().stream()
-                                .filter(env -> env.getName().equals(name))
-                                .findFirst();
+    public void setEnvironments(Map<String, EnvironmentImpl> environments) {
+        this.environments = environments;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof WorkspaceConfigImpl)) return false;
-        final WorkspaceConfigImpl other = (WorkspaceConfigImpl)obj;
-        return Objects.equals(name, other.name)
-               && Objects.equals(defaultEnv, other.defaultEnv)
-               && getCommands().equals(other.getCommands())
-               && getEnvironments().equals(other.getEnvironments())
-               && getProjects().equals(other.getProjects())
-               && Objects.equals(description, other.description);
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof WorkspaceConfigImpl)) {
+            return false;
+        }
+        final WorkspaceConfigImpl that = (WorkspaceConfigImpl)obj;
+        return Objects.equals(id, that.id)
+               && Objects.equals(name, that.name)
+               && Objects.equals(description, that.description)
+               && Objects.equals(defaultEnv, that.defaultEnv)
+               && getCommands().equals(that.getCommands())
+               && getProjects().equals(that.getProjects())
+               && getEnvironments().equals(that.getEnvironments());
     }
 
     @Override
     public int hashCode() {
         int hash = 7;
+        hash = 31 * hash + Objects.hashCode(id);
         hash = 31 * hash + Objects.hashCode(name);
+        hash = 31 * hash + Objects.hashCode(description);
         hash = 31 * hash + Objects.hashCode(defaultEnv);
         hash = 31 * hash + getCommands().hashCode();
-        hash = 31 * hash + getEnvironments().hashCode();
         hash = 31 * hash + getProjects().hashCode();
-        hash = 31 * hash + Objects.hashCode(description);
+        hash = 31 * hash + getEnvironments().hashCode();
         return hash;
     }
 
     @Override
     public String toString() {
-        return "UsersWorkspaceImpl{" +
+        return "WorkspaceConfigImpl{" +
+               "id=" + id +
                ", name='" + name + '\'' +
+               ", description='" + description + '\'' +
                ", defaultEnv='" + defaultEnv + '\'' +
                ", commands=" + commands +
                ", projects=" + projects +
                ", environments=" + environments +
-               ", description='" + description + '\'' +
                '}';
     }
 
@@ -182,12 +231,12 @@ public class WorkspaceConfigImpl implements WorkspaceConfig {
      */
     public static class WorkspaceConfigImplBuilder {
 
-        private String                        name;
-        private String                        defaultEnvName;
-        private List<? extends Command>       commands;
-        private List<? extends ProjectConfig> projects;
-        private List<? extends Environment>   environments;
-        private String                        description;
+        private String                             name;
+        private String                             defaultEnvName;
+        private List<? extends Command>            commands;
+        private List<? extends ProjectConfig>      projects;
+        private Map<String, ? extends Environment> environments;
+        private String                             description;
 
         private WorkspaceConfigImplBuilder() {}
 
@@ -230,7 +279,7 @@ public class WorkspaceConfigImpl implements WorkspaceConfig {
             return this;
         }
 
-        public WorkspaceConfigImplBuilder setEnvironments(List<? extends Environment> environments) {
+        public WorkspaceConfigImplBuilder setEnvironments(Map<String, ? extends Environment> environments) {
             this.environments = environments;
             return this;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.che.api.workspace.server.stack;
 
-import com.google.common.io.Resources;
 import com.jayway.restassured.response.Response;
 
 import org.eclipse.che.api.core.ConflictException;
@@ -19,10 +18,6 @@ import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.rest.ApiExceptionMapper;
 import org.eclipse.che.api.core.rest.shared.dto.ServiceError;
 import org.eclipse.che.api.machine.server.model.impl.CommandImpl;
-import org.eclipse.che.api.machine.server.model.impl.LimitsImpl;
-import org.eclipse.che.api.machine.server.model.impl.MachineConfigImpl;
-import org.eclipse.che.api.machine.server.model.impl.MachineSourceImpl;
-import org.eclipse.che.api.machine.server.model.impl.ServerConfImpl;
 import org.eclipse.che.api.workspace.server.model.impl.EnvironmentImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackComponentImpl;
@@ -33,6 +28,7 @@ import org.eclipse.che.api.workspace.server.stack.image.StackIcon;
 import org.eclipse.che.api.workspace.shared.dto.stack.StackComponentDto;
 import org.eclipse.che.api.workspace.shared.dto.stack.StackDto;
 import org.eclipse.che.api.workspace.shared.dto.stack.StackSourceDto;
+import org.eclipse.che.api.workspace.shared.stack.Stack;
 import org.eclipse.che.api.workspace.shared.stack.StackComponent;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.subject.SubjectImpl;
@@ -45,24 +41,20 @@ import org.everrest.core.impl.uri.UriBuilderImpl;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import javax.ws.rs.core.UriInfo;
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jayway.restassured.RestAssured.given;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 import static org.eclipse.che.api.workspace.shared.Constants.LINK_REL_GET_STACK_BY_ID;
@@ -111,14 +103,12 @@ public class StackServiceTest {
 
     private static final String ENVIRONMENT_NAME = "default";
 
-    private static final String  MACHINE_CONFIG_NAME = "ws-machine";
-    private static final String  MACHINE_TYPE        = "docker";
-    private static final boolean IS_DEV              = true;
-
-    private static final String MACHINE_SOURCE_LOCATION = "http://localhost:8080/ide/api/recipe/recipe_ubuntu/script";
-    private static final String MACHINE_SOURCE_TYPE     = "dockerfile";
-
     private static final String ICON_MEDIA_TYPE = "image/svg+xml";
+
+    private static final String SVG_ICON = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                                           "<svg viewBox=\"0 0 200 200\" xmlns=\"http://www.w3.org/2000/svg\">\n" +
+                                           "  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"red\"/>\n" +
+                                           "</svg>";
 
     @SuppressWarnings("unused")
     static final EnvironmentFilter  FILTER = new EnvironmentFilter();
@@ -145,45 +135,32 @@ public class StackServiceTest {
     @Mock
     StackComponentImpl stackComponent;
 
+    @Mock
+    StackValidator validator;
+
     @InjectMocks
     StackService service;
 
-    @BeforeClass
-    public void setUp() throws IOException, ConflictException {
+    @BeforeMethod
+    public void setUp() throws NoSuchFieldException, IllegalAccessException {
         byte[] fileContent = STACK_ID.getBytes();
         stackIcon = new StackIcon(ICON_MEDIA_TYPE, "image/svg+xml", fileContent);
-        componentsImpl = Collections.singletonList(new StackComponentImpl(COMPONENT_NAME, COMPONENT_VERSION));
+        componentsImpl = singletonList(new StackComponentImpl(COMPONENT_NAME, COMPONENT_VERSION));
         stackSourceImpl = new StackSourceImpl(SOURCE_TYPE, SOURCE_ORIGIN);
         CommandImpl command = new CommandImpl(COMMAND_NAME, COMMAND_LINE, COMMAND_TYPE);
-        MachineSourceImpl machineSource = new MachineSourceImpl(MACHINE_SOURCE_TYPE).setLocation(MACHINE_SOURCE_LOCATION);
-        int limitMemory = 1000;
-        LimitsImpl limits = new LimitsImpl(limitMemory);
-        MachineConfigImpl machineConfig = new MachineConfigImpl(IS_DEV,
-                                                                MACHINE_CONFIG_NAME,
-                                                                MACHINE_TYPE,
-                                                                machineSource,
-                                                                limits,
-                                                                Arrays.asList(new ServerConfImpl("ref1",
-                                                                                                 "8080",
-                                                                                                 "https",
-                                                                                                 "some/path"),
-                                                                              new ServerConfImpl("ref2",
-                                                                                                 "9090/udp",
-                                                                                                 "someprotocol",
-                                                                                                 "/some/path")),
-                                                                Collections.singletonMap("key1", "value1"));
-        EnvironmentImpl environment = new EnvironmentImpl(ENVIRONMENT_NAME, null, Collections.singletonList(machineConfig));
+        EnvironmentImpl environment = new EnvironmentImpl(null,
+                                                          null);
 
         WorkspaceConfigImpl workspaceConfig = WorkspaceConfigImpl.builder()
                                                                  .setName(WORKSPACE_CONFIG_NAME)
                                                                  .setDefaultEnv(DEF_ENVIRONMENT_NAME)
-                                                                 .setCommands(Collections.singletonList(command))
-                                                                 .setEnvironments(Collections.singletonList(environment))
+                                                                 .setCommands(singletonList(command))
+                                                                 .setEnvironments(singletonMap(ENVIRONMENT_NAME, environment))
                                                                  .build();
 
         stackSourceDto = newDto(StackSourceDto.class).withType(SOURCE_TYPE).withOrigin(SOURCE_ORIGIN);
         StackComponentDto stackComponentDto = newDto(StackComponentDto.class).withName(COMPONENT_NAME).withVersion(COMPONENT_VERSION);
-        componentsDto = Collections.singletonList(stackComponentDto);
+        componentsDto = singletonList(stackComponentDto);
 
         stackDto = DtoFactory.getInstance().createDto(StackDto.class).withId(STACK_ID)
                              .withName(NAME)
@@ -217,10 +194,7 @@ public class StackServiceTest {
                                 .setWorkspaceConfig(workspaceConfig)
                                 .setStackIcon(stackIcon)
                                 .build();
-    }
 
-    @BeforeMethod
-    public void setUpUriInfo() throws NoSuchFieldException, IllegalAccessException {
         when(uriInfo.getBaseUriBuilder()).thenReturn(new UriBuilderImpl());
 
         final Field uriField = service.getClass()
@@ -233,55 +207,7 @@ public class StackServiceTest {
     /** Create stack */
 
     @Test
-    public void shouldThrowBadRequestExceptionWhenUserTryCreateNullStack() {
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .contentType(APPLICATION_JSON)
-                                         .when()
-                                         .post(SECURE_PATH + "/stack");
-
-        assertEquals(response.getStatusCode(), 400);
-        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), "Stack required");
-    }
-
-    @Test
-    public void shouldThrowBadRequestExceptionWhenUserTryCreateStackWithNonRequiredStackName() {
-        stackDto.setName(null);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .contentType(APPLICATION_JSON)
-                                         .body(stackDto)
-                                         .when()
-                                         .post(SECURE_PATH + "/stack");
-
-        assertEquals(response.getStatusCode(), 400);
-        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), "Stack name required");
-    }
-
-    @Test
-    public void shouldThrowBadRequestExceptionWhenUserTryCreateStackWithNonRequiredSource() {
-        stackDto.setSource(null);
-        stackDto.setWorkspaceConfig(null);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .contentType(APPLICATION_JSON)
-                                         .body(stackDto)
-                                         .when()
-                                         .post(SECURE_PATH + "/stack");
-
-        assertEquals(response.getStatusCode(), 400);
-        String expectedErrorMessage = "Stack source required. You must specify stack source: 'workspaceConfig' or 'stackSource'";
-        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), expectedErrorMessage);
-    }
-
-    @Test
     public void newStackShouldBeCreatedForUser() throws ConflictException, ServerException {
-        stackShouldBeCreated();
-    }
-
-    private void stackShouldBeCreated() throws ConflictException, ServerException {
         final Response response = given().auth()
                                          .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
                                          .contentType(APPLICATION_JSON)
@@ -311,40 +237,40 @@ public class StackServiceTest {
         assertEquals(stackDtoDescriptor.getLinks().get(1).getRel(), LINK_REL_GET_STACK_BY_ID);
     }
 
-    @Test
-    public void shouldThrowBadRequestExceptionOnCreateStackWithEmptyBody() {
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .contentType(APPLICATION_JSON)
-                                         .when()
-                                         .post(SECURE_PATH + "/stack");
+//    @Test
+//    public void shouldThrowBadRequestExceptionOnCreateStackWithEmptyBody() {
+//        final Response response = given().auth()
+//                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
+//                                         .contentType(APPLICATION_JSON)
+//                                         .when()
+//                                         .post(SECURE_PATH + "/stack");
+//
+//        assertEquals(response.getStatusCode(), 400);
+//        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), "Stack required");
+//    }
 
-        assertEquals(response.getStatusCode(), 400);
-        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), "Stack required");
-    }
-
-    @Test
-    public void shouldThrowBadRequestExceptionOnCreateStackWithEmptyName() {
-        StackComponentDto stackComponentDto = newDto(StackComponentDto.class).withName("Java").withVersion("1.8.45");
-        StackSourceDto stackSourceDto = newDto(StackSourceDto.class).withType("image").withOrigin("codenvy/ubuntu_jdk8");
-        StackDto stackDto = newDto(StackDto.class).withId(USER_ID)
-                                                  .withDescription("")
-                                                  .withScope("Simple java stack for generation java projects")
-                                                  .withTags(asList("java", "maven"))
-                                                  .withCreator("che")
-                                                  .withComponents(Collections.singletonList(stackComponentDto))
-                                                  .withSource(stackSourceDto);
-
-        Response response = given().auth()
-                                   .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                   .contentType(APPLICATION_JSON)
-                                   .body(stackDto)
-                                   .when()
-                                   .post(SECURE_PATH + "/stack");
-
-        assertEquals(response.getStatusCode(), 400);
-        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), "Stack name required");
-    }
+//    @Test
+//    public void shouldThrowBadRequestExceptionOnCreateStackWithEmptyName() {
+//        StackComponentDto stackComponentDto = newDto(StackComponentDto.class).withName("Java").withVersion("1.8.45");
+//        StackSourceDto stackSourceDto = newDto(StackSourceDto.class).withType("image").withOrigin("codenvy/ubuntu_jdk8");
+//        StackDto stackDto = newDto(StackDto.class).withId(USER_ID)
+//                                                  .withDescription("")
+//                                                  .withScope("Simple java stack for generation java projects")
+//                                                  .withTags(asList("java", "maven"))
+//                                                  .withCreator("che")
+//                                                  .withComponents(singletonList(stackComponentDto))
+//                                                  .withSource(stackSourceDto);
+//
+//        Response response = given().auth()
+//                                   .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
+//                                   .contentType(APPLICATION_JSON)
+//                                   .body(stackDto)
+//                                   .when()
+//                                   .post(SECURE_PATH + "/stack");
+//
+//        assertEquals(response.getStatusCode(), 400);
+//        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), "Stack name required");
+//    }
 
     /** Get stack by id */
 
@@ -370,24 +296,6 @@ public class StackServiceTest {
         assertEquals(result.getSource().getType(), stackImpl.getSource().getType());
         assertEquals(result.getSource().getOrigin(), stackImpl.getSource().getOrigin());
         assertEquals(result.getCreator(), stackImpl.getCreator());
-    }
-
-    /** Update stack */
-
-    @Test
-    public void shouldThrowBadRequestExceptionWhenUserTryUpdateStackWithNonRequiredSource() {
-        StackDto updatedStackDto = stackDto.withSource(null).withWorkspaceConfig(null);
-
-        Response response = given().auth()
-                                   .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                   .contentType(APPLICATION_JSON)
-                                   .content(updatedStackDto)
-                                   .when()
-                                   .put(SECURE_PATH + "/stack/" + STACK_ID);
-
-        assertEquals(response.getStatusCode(), 400);
-        String expectedMessage = "Stack source required. You must specify stack source: 'workspaceConfig' or 'stackSource'";
-        assertEquals(unwrapDto(response, ServiceError.class).getMessage(), expectedMessage);
     }
 
     @Test
@@ -438,7 +346,7 @@ public class StackServiceTest {
     }
 
     @Test
-    public void creatorShouldNotBeUpdated() throws ServerException, NotFoundException {
+    public void creatorShouldNotBeUpdated() throws ServerException, NotFoundException, ConflictException {
         StackDto updatedStackDto = DtoFactory.getInstance().createDto(StackDto.class)
                                              .withId(STACK_ID)
                                              .withName(NAME)
@@ -578,7 +486,7 @@ public class StackServiceTest {
 
     /** Delete icon by stack id */
     @Test
-    public void stackIconShouldBeDeletedForUserOwner() throws NotFoundException, ServerException {
+    public void stackIconShouldBeDeletedForUserOwner() throws NotFoundException, ConflictException, ServerException {
         when(stackDao.getById(stackImpl.getId())).thenReturn(stackImpl);
 
         Response response = given().auth()
@@ -594,32 +502,24 @@ public class StackServiceTest {
     /** Update stack icon */
 
     @Test
-    public void stackIconShouldBeUploadedForUserOwner() throws NotFoundException, ServerException, URISyntaxException {
-        File file = new File(Resources.getResource("stack_img").getPath(), "type-java.svg");
-
+    public void stackIconShouldBeUploadedForUserOwner() throws NotFoundException, ConflictException, ServerException, URISyntaxException {
         when(stackDao.getById(stackImpl.getId())).thenReturn(stackImpl);
 
-        Response response = given().auth()
-                                   .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                   .when()
-                                   .multiPart("type-java.svg", file, "image/svg+xml")
-                                   .contentType(MULTIPART_FORM_DATA)
-                                   .post(SECURE_PATH + "/stack/" + stackImpl.getId() + "/icon");
-
-        assertEquals(response.getStatusCode(), 200);
-        verify(stackDao).getById(stackImpl.getId());
-        verify(stackDao).update(any());
+        checkUploadIcon(stackImpl);
     }
 
     @Test
-    public void foreignStackIconShouldBeUploadedForUser() throws NotFoundException, ServerException {
-        File file = new File(Resources.getResource("stack_img").getPath(), "type-java.svg");
+    public void foreignStackIconShouldBeUploadedForUser() throws NotFoundException, ConflictException, ServerException {
         when(stackDao.getById(foreignStack.getId())).thenReturn(foreignStack);
 
+        checkUploadIcon(foreignStack);
+    }
+
+    private void checkUploadIcon(Stack stack) throws NotFoundException, ServerException, ConflictException {
         Response response = given().auth()
                                    .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
                                    .when()
-                                   .multiPart("type-java.svg", file, "image/svg+xml")
+                                   .multiPart("type-java.svg", SVG_ICON, "image/svg+xml")
                                    .contentType(MULTIPART_FORM_DATA)
                                    .post(SECURE_PATH + "/stack/" + stackImpl.getId() + "/icon");
 

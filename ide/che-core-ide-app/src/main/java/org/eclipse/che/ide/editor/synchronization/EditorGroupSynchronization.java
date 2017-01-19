@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,13 +12,15 @@ package org.eclipse.che.ide.editor.synchronization;
 
 import org.eclipse.che.ide.api.editor.EditorPartPresenter;
 import org.eclipse.che.ide.api.editor.events.DocumentChangeEvent;
+import org.eclipse.che.ide.api.event.FileContentUpdateEvent;
 import org.eclipse.che.ide.resource.Path;
 
+import javax.validation.constraints.NotNull;
 import java.util.Set;
 
 /**
- * Contains list of opened files with the same {@link Path} and listens to {@link DocumentChangeEvent} to provide the synchronization of
- * the content for them.
+ * Contains list of opened files with the same {@link Path} and listens to {@link DocumentChangeEvent} and {@link FileContentUpdateEvent}
+ * to provide the synchronization of the content for them.
  *
  * @author Roman Nikitenko
  */
@@ -39,6 +41,9 @@ public interface EditorGroupSynchronization {
      *         editor to remove from group
      */
     void removeEditor(EditorPartPresenter editor);
+
+    /** Notify group that active editor has changed */
+    void onActiveEditorChanged(@NotNull EditorPartPresenter activeEditor);
 
     /** Removes all editors from the group and stops to track changes of content for them. */
     void unInstall();

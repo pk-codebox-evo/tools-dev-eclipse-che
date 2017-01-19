@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import elemental.events.KeyboardEvent.KeyCode;
 import com.google.web.bindery.event.shared.EventBus;
 
 import org.eclipse.che.ide.api.editor.events.DocumentReadyEvent;
+import org.eclipse.che.ide.api.editor.formatter.ContentFormatter;
 import org.eclipse.che.ide.api.editor.text.TypedRegion;
 import org.eclipse.che.ide.api.editor.annotation.AnnotationModel;
 import org.eclipse.che.ide.api.editor.annotation.HasAnnotationRendering;
@@ -101,9 +102,18 @@ public class TextEditorInit<T extends EditorWidget> {
                 configureCodeAssist(documentHandle);
                 configureChangeInterceptors(documentHandle);
                 addQuickAssistKeyBinding();
+                configureFormatter(textEditor);
             }
         };
         new DocReadyWrapper<TextEditorInit<T>>(generalEventBus, this.textEditor.getEditorHandle(), init, this);
+    }
+
+    private void configureFormatter(TextEditorPresenter<T> textEditor) {
+        ContentFormatter formatter = configuration.getContentFormatter();
+        if (formatter != null) {
+            formatter.install(textEditor);
+        }
+
     }
 
     public void uninstall() {
@@ -180,8 +190,9 @@ public class TextEditorInit<T extends EditorWidget> {
 
             final KeyBindingAction action = new KeyBindingAction() {
                 @Override
-                public void action() {
-                    showCompletion(codeAssistant);
+                public boolean action() {
+                    showCompletion(codeAssistant, true);
+                    return true;
                 }
             };
             final HasKeyBindings hasKeyBindings = this.textEditor.getHasKeybindings();
@@ -191,14 +202,15 @@ public class TextEditorInit<T extends EditorWidget> {
             documentHandle.getDocEventBus().addHandler(CompletionRequestEvent.TYPE, new CompletionRequestHandler() {
                 @Override
                 public void onCompletionRequest(final CompletionRequestEvent event) {
-                    showCompletion(codeAssistant);
+                    showCompletion(codeAssistant, false);
                 }
             });
         } else {
             final KeyBindingAction action = new KeyBindingAction() {
                 @Override
-                public void action() {
+                public boolean action() {
                     showCompletion();
+                    return true;
                 }
             };
             final HasKeyBindings hasKeyBindings = this.textEditor.getHasKeybindings();
@@ -222,8 +234,9 @@ public class TextEditorInit<T extends EditorWidget> {
      * Show the available completions.
      *
      * @param codeAssistant the code assistant
+     * @param triggered if triggered by the content assist key binding
      */
-    private void showCompletion(final CodeAssistant codeAssistant) {
+    private void showCompletion(final CodeAssistant codeAssistant, final boolean triggered) {
         final int cursor = textEditor.getCursorOffset();
         if (cursor < 0) {
             return;
@@ -236,7 +249,7 @@ public class TextEditorInit<T extends EditorWidget> {
                     // cursor must be computed here again so it's original value is not baked in
                     // the SMI instance closure - important for completion update when typing
                     final int cursor = textEditor.getCursorOffset();
-                    codeAssistant.computeCompletionProposals(cursor, new CodeAssistCallback() {
+                    codeAssistant.computeCompletionProposals(cursor, triggered, new CodeAssistCallback() {
                         @Override
                         public void proposalComputed(final List<CompletionProposal> proposals) {
                             callback.onCompletionReady(proposals);
@@ -261,11 +274,12 @@ public class TextEditorInit<T extends EditorWidget> {
         if (this.quickAssist != null) {
             final KeyBindingAction action = new KeyBindingAction() {
                 @Override
-                public void action() {
+                public boolean action() {
                     final PositionConverter positionConverter = textEditor.getPositionConverter();
                     if (positionConverter != null) {
                         textEditor.showQuickAssist();
                     }
+                    return true;
                 }
             };
             final HasKeyBindings hasKeyBindings = this.textEditor.getHasKeybindings();

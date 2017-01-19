@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,6 +23,8 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static org.eclipse.che.api.vfs.Path.ROOT;
 
 @Singleton
 public class DefaultFileWatcherNotificationHandler implements FileWatcherNotificationHandler {
@@ -74,7 +76,7 @@ public class DefaultFileWatcherNotificationHandler implements FileWatcherNotific
             Path vfsPath = Path.of(subPath);
             VirtualFile virtualFile = virtualFileSystem.getRoot().getChild(vfsPath);
             if (virtualFile == null) {
-                virtualFile = new DeletedLocalVirtualFile(new File(root, subPath), vfsPath, virtualFileSystem, isDir);
+                virtualFile = new DeletedLocalVirtualFile(new File(root, subPath), ROOT.newPath(vfsPath), virtualFileSystem, isDir);
             }
             return virtualFile;
         } catch (ServerException e) {

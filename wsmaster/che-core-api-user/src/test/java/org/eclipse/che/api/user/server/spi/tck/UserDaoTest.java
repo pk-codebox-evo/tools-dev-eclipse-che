@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,34 +12,50 @@ package org.eclipse.che.api.user.server.spi.tck;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
-import org.eclipse.che.api.core.UnauthorizedException;
+import org.eclipse.che.api.core.Page;
+import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.user.User;
+import org.eclipse.che.api.core.notification.EventService;
+import org.eclipse.che.api.core.notification.EventSubscriber;
 import org.eclipse.che.api.user.server.Constants;
+import org.eclipse.che.api.user.server.event.BeforeUserRemovedEvent;
+import org.eclipse.che.api.user.server.event.PostUserPersistedEvent;
+import org.eclipse.che.api.user.server.event.UserRemovedEvent;
 import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.eclipse.che.api.user.server.spi.UserDao;
 import org.eclipse.che.commons.lang.NameGenerator;
-import org.eclipse.che.commons.test.tck.TckModuleFactory;
+import org.eclipse.che.commons.test.tck.TckListener;
 import org.eclipse.che.commons.test.tck.repository.TckRepository;
 import org.eclipse.che.commons.test.tck.repository.TckRepositoryException;
+import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
+import org.eclipse.che.core.db.cascade.event.CascadeEvent;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Guice;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
+import static org.testng.AssertJUnit.assertTrue;
 
 /**
  * Tests {@link UserDao} contract.
  *
  * @author Yevhenii Voevodin
  */
-@Guice(moduleFactory = TckModuleFactory.class)
+@Listeners(TckListener.class)
 @Test(suiteName = UserDaoTest.SUITE_NAME)
 public class UserDaoTest {
 
@@ -51,6 +67,9 @@ public class UserDaoTest {
 
     @Inject
     private UserDao userDao;
+
+    @Inject
+    private EventService eventService;
 
     @Inject
     private TckRepository<UserImpl> tckRepository;
@@ -67,7 +86,6 @@ public class UserDaoTest {
             final List<String> aliases = new ArrayList<>(asList("google:" + name, "github:" + name));
             users[i] = new UserImpl(id, email, name, password, aliases);
         }
-
         tckRepository.createAll(Arrays.asList(users));
     }
 
@@ -77,48 +95,41 @@ public class UserDaoTest {
     }
 
     @Test
-    public void shouldAuthenticateUserByName() throws Exception {
+    public void shouldGetUserByNameAndPassword() throws Exception {
         final UserImpl user = users[0];
 
-        assertEquals(userDao.authenticate(user.getName(), user.getPassword()), user.getId());
+        assertEqualsNoPassword(userDao.getByAliasAndPassword(user.getName(), user.getPassword()), user);
     }
 
     @Test
-    public void shouldAuthenticateUserByEmail() throws Exception {
+    public void shouldGetUserByEmailAndPassword() throws Exception {
         final UserImpl user = users[0];
 
-        assertEquals(userDao.authenticate(user.getEmail(), user.getPassword()), user.getId());
+        assertEqualsNoPassword(userDao.getByAliasAndPassword(user.getEmail(), user.getPassword()), user);
     }
 
-    @Test
-    public void shouldAuthenticateUserByAlias() throws Exception {
+    @Test(expectedExceptions = NotFoundException.class)
+    public void shouldThrowNotFoundExceptionIfUserWithSuchNameOrEmailDoesNotExist() throws Exception {
         final UserImpl user = users[0];
 
-        assertEquals(userDao.authenticate(user.getAliases().get(0), user.getPassword()), user.getId());
+        userDao.getByAliasAndPassword(user.getId(), user.getPassword());
     }
 
-    @Test(expectedExceptions = UnauthorizedException.class)
-    public void shouldNotAuthenticateUserById() throws Exception {
+    @Test(expectedExceptions = NotFoundException.class)
+    public void shouldThrowNotFoundExceptionWhenGettingUserByNameAndWrongPassword() throws Exception {
         final UserImpl user = users[0];
 
-        assertEquals(userDao.authenticate(user.getId(), user.getPassword()), user.getId());
-    }
-
-    @Test(expectedExceptions = UnauthorizedException.class)
-    public void shouldNotAuthenticateUserWithWrongPassword() throws Exception {
-        final UserImpl user = users[0];
-
-        assertEquals(userDao.authenticate(user.getName(), "fake" + user.getPassword()), user.getId());
+        userDao.getByAliasAndPassword(user.getName(), "fake" + user.getPassword());
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void shouldThrowNpeWhenAuthorizingUserWithNullAlias() throws Exception {
-        userDao.authenticate(null, "password");
+    public void shouldThrowNpeWhenAuthorizingUserWithNullEmailOrName() throws Exception {
+        userDao.getByAliasAndPassword(null, "password");
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void shouldThrowNpeWhenAuthorizingUserWithNullPassword() throws Exception {
-        userDao.authenticate("alias", null);
+        userDao.getByAliasAndPassword(users[0].getName(), null);
     }
 
     @Test
@@ -189,6 +200,55 @@ public class UserDaoTest {
         userDao.getByAlias(null);
     }
 
+    @Test
+    public void shouldGetTotalUserCount() throws Exception {
+        assertEquals(userDao.getTotalCount(), 5);
+    }
+
+    @Test
+    public void getAllShouldReturnAllUsersWithinSingleResponse() throws Exception {
+        List<UserImpl> result = userDao.getAll(6, 0).getItems();
+        assertEquals(result.size(), 5);
+
+        result.sort((User o1, User o2) -> o1.getName().compareTo(o2.getName()));
+        for (int i = 0; i < result.size(); i++) {
+            assertEqualsNoPassword(users[i], result.get(i));
+        }
+    }
+
+    @Test
+    public void shouldReturnGetAllWithSkipCountAndMaxItems() throws Exception {
+        List<UserImpl> users = userDao.getAll(3, 0).getItems();
+        assertEquals(users.size(), 3);
+
+        users = userDao.getAll(3, 3).getItems();
+        assertEquals(users.size(), 2);
+    }
+
+    @Test
+    public void shouldReturnEmptyListIfNoMoreUsers() throws Exception {
+        List<UserImpl> users = userDao.getAll(1, 6).getItems();
+        assertTrue(users.isEmpty());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void getAllShouldThrowIllegalArgumentExceptionIfMaxItemsWrong() throws Exception {
+        userDao.getAll(-1, 5);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void getAllShouldThrowIllegalArgumentExceptionIfSkipCountWrong() throws Exception {
+        userDao.getAll(2, -1);
+    }
+
+    @Test(dependsOnMethods = "shouldGetTotalUserCount")
+    public void shouldReturnCorrectTotalCountAlongWithRequestedUsers() throws Exception {
+        final Page<UserImpl> page = userDao.getAll(2, 0);
+
+        assertEquals(page.getItems().size(), 2);
+        assertEquals(page.getTotalItemsCount(), 5);
+    }
+
     @Test(dependsOnMethods = "shouldGetUserById")
     public void shouldCreateUser() throws Exception {
         final UserImpl newUser = new UserImpl("user123",
@@ -200,6 +260,28 @@ public class UserDaoTest {
         userDao.create(newUser);
 
         assertEqualsNoPassword(userDao.getById(newUser.getId()), newUser);
+    }
+
+    @Test(dependsOnMethods = "shouldThrowNotFoundExceptionWhenGettingNonExistingUserById",
+          expectedExceptions = NotFoundException.class)
+    public void shouldNotCreateUserWhenSubscriberThrowsExceptionOnUserStoring() throws Exception {
+        final UserImpl newUser = new UserImpl("user123",
+                                              "user123@eclipse.org",
+                                              "user_name",
+                                              "password",
+                                              asList("google:user123", "github:user123"));
+        CascadeEventSubscriber<PostUserPersistedEvent> subscriber = mockCascadeEventSubscriber();
+        doThrow(new ConflictException("error")).when(subscriber).onCascadeEvent(any());
+        eventService.subscribe(subscriber, PostUserPersistedEvent.class);
+
+        try {
+            userDao.create(newUser);
+            fail("UserDao#create had to throw conflict exception");
+        } catch (ConflictException ignored) {
+        }
+
+        eventService.unsubscribe(subscriber, PostUserPersistedEvent.class);
+        userDao.getById(newUser.getId());
     }
 
     @Test(expectedExceptions = ConflictException.class)
@@ -258,14 +340,14 @@ public class UserDaoTest {
         userDao.update(new UserImpl(user.getId(),
                                     "new-email",
                                     "new-name",
-                                    "new-password",
+                                    null,
                                     asList("google:new-alias", "github:new-alias")));
 
         final UserImpl updated = userDao.getById(user.getId());
         assertEquals(updated.getId(), user.getId());
         assertEquals(updated.getEmail(), "new-email");
         assertEquals(updated.getName(), "new-name");
-        assertEquals(updated.getAliases(), asList("google:new-alias", "github:new-alias"));
+        assertEquals(new HashSet<>(updated.getAliases()), new HashSet<>(asList("google:new-alias", "github:new-alias")));
     }
 
     @Test(expectedExceptions = ConflictException.class)
@@ -319,6 +401,51 @@ public class UserDaoTest {
     }
 
     @Test
+    public void shouldFireBeforeUserRemovedEventOnRemoveExistedUser() throws Exception {
+        final UserImpl user = users[0];
+        final BeforeUserRemovedEvent[] firedEvent = {null};
+        EventSubscriber<BeforeUserRemovedEvent> beforeUserRemovedSubscriber = event -> firedEvent[0] = event;
+        eventService.subscribe(beforeUserRemovedSubscriber, BeforeUserRemovedEvent.class);
+
+        userDao.remove(user.getId());
+
+        assertNotNull(firedEvent[0]);
+        assertEquals(firedEvent[0].getUser().getId(), user.getId());
+        eventService.unsubscribe(beforeUserRemovedSubscriber, BeforeUserRemovedEvent.class);
+    }
+
+    @Test
+    public void shouldFireUserRemovedEventOnRemoveExistedUser() throws Exception {
+        final UserImpl user = users[0];
+        final UserRemovedEvent[] firedEvent = {null};
+        EventSubscriber<UserRemovedEvent> userRemovedSubscriber = event -> firedEvent[0] = event;
+        eventService.subscribe(userRemovedSubscriber, UserRemovedEvent.class);
+
+        userDao.remove(user.getId());
+
+        assertNotNull(firedEvent[0]);
+        assertEquals(firedEvent[0].getUserId(), user.getId());
+        eventService.unsubscribe(userRemovedSubscriber, UserRemovedEvent.class);
+    }
+
+    @Test(dependsOnMethods = "shouldGetUserById")
+    public void shouldNotRemoveUserWhenSubscriberThrowsExceptionOnUserRemoving() throws Exception {
+        final UserImpl user = users[0];
+        CascadeEventSubscriber<BeforeUserRemovedEvent> subscriber = mockCascadeEventSubscriber();
+        doThrow(new ServerException("error")).when(subscriber).onCascadeEvent(any());
+        eventService.subscribe(subscriber, BeforeUserRemovedEvent.class);
+
+        try {
+            userDao.remove(user.getId());
+            fail("UserDao#remove had to throw server exception");
+        } catch (ServerException ignored) {
+        }
+
+        assertEqualsNoPassword(userDao.getById(user.getId()), user);
+        eventService.unsubscribe(subscriber, BeforeUserRemovedEvent.class);
+    }
+
+    @Test
     public void shouldNotThrowAnyExceptionWhenRemovingNonExistingUser() throws Exception {
         userDao.remove("non-existing-user");
     }
@@ -328,10 +455,55 @@ public class UserDaoTest {
         userDao.remove(null);
     }
 
+    @Test(dependsOnMethods = "shouldGetUserById")
+    public void shouldReturnUserWithNullPasswordWhenGetUserById() throws Exception {
+        assertEquals(userDao.getById(users[0].getId()).getPassword(), null);
+    }
+
+    @Test(dependsOnMethods = "shouldGetUserByAlias")
+    public void shouldReturnUserWithNullPasswordWhenGetUserByAliases() throws Exception {
+        assertEquals(userDao.getByAlias(users[0].getAliases().get(0)).getPassword(), null);
+    }
+
+    @Test(dependsOnMethods = "shouldGetUserByName")
+    public void shouldReturnUserWithNullPasswordWhenGetUserByName() throws Exception {
+        assertEquals(userDao.getByName(users[0].getName()).getPassword(), null);
+    }
+
+    @Test(dependsOnMethods = "shouldGetUserByEmail")
+    public void shouldReturnUserWithNullPasswordWhenGetUserByEmail() throws Exception {
+        assertEquals(userDao.getByEmail(users[0].getEmail()).getPassword(), null);
+    }
+
+    @Test(dependsOnMethods = {"shouldGetUserByNameAndPassword",
+                              "shouldGetUserByEmailAndPassword"})
+    public void shouldReturnUserWithNullPasswordWhenGetUserByAliasAndPassword() throws Exception {
+        final UserImpl user = users[0];
+        assertEquals(userDao.getByAliasAndPassword(user.getName(), user.getPassword()).getPassword(), null);
+        assertEquals(userDao.getByAliasAndPassword(user.getEmail(), user.getPassword()).getPassword(), null);
+    }
+
+    @Test(dependsOnMethods = "getAllShouldReturnAllUsersWithinSingleResponse")
+    public void shouldReturnUserWithNullPasswordWhenGetAllUser() throws Exception {
+        assertEquals(userDao.getAll(users.length, 0)
+                            .getItems()
+                            .stream()
+                            .filter(u -> u.getPassword() == null)
+                            .count(), users.length);
+    }
+
     private static void assertEqualsNoPassword(User actual, User expected) {
+        assertNotNull(actual, "Expected not-null user");
         assertEquals(actual.getId(), expected.getId());
         assertEquals(actual.getEmail(), expected.getEmail());
         assertEquals(actual.getName(), expected.getName());
-        assertEquals(actual.getAliases(), expected.getAliases());
+        assertEquals(new HashSet<>(actual.getAliases()), new HashSet<>(expected.getAliases()));
+    }
+
+    private <T extends CascadeEvent> CascadeEventSubscriber<T> mockCascadeEventSubscriber() {
+        @SuppressWarnings("unchecked")
+        CascadeEventSubscriber<T> subscriber = mock(CascadeEventSubscriber.class);
+        doCallRealMethod().when(subscriber).onEvent(any());
+        return subscriber;
     }
 }

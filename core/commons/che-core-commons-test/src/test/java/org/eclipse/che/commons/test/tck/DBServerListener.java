@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,8 +11,6 @@
 package org.eclipse.che.commons.test.tck;
 
 import org.testng.ITestContext;
-import org.testng.ITestListener;
-import org.testng.ITestResult;
 
 /**
  * Listener representing fake db server url injection for testing "attributes sharing"
@@ -20,7 +18,7 @@ import org.testng.ITestResult;
  *
  * @author Yevhenii Voevodin
  */
-public class DBServerListener implements ITestListener {
+public class DBServerListener extends TestListenerAdapter {
 
     public static final String DB_SERVER_URL_ATTRIBUTE_NAME = "db_server_url";
     public static final String DB_SERVER_URL                = "localhost:12345";
@@ -29,22 +27,4 @@ public class DBServerListener implements ITestListener {
     public void onStart(ITestContext context) {
         context.setAttribute(DB_SERVER_URL_ATTRIBUTE_NAME, DB_SERVER_URL);
     }
-
-    @Override
-    public void onFinish(ITestContext context) {}
-
-    @Override
-    public void onTestStart(ITestResult result) {}
-
-    @Override
-    public void onTestSuccess(ITestResult result) {}
-
-    @Override
-    public void onTestFailure(ITestResult result) {}
-
-    @Override
-    public void onTestSkipped(ITestResult result) {}
-
-    @Override
-    public void onTestFailedButWithinSuccessPercentage(ITestResult result) {}
 }

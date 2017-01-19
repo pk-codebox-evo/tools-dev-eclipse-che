@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,9 +21,11 @@ import java.util.regex.Pattern;
 
 /** @author andrew00x */
 public class StringArrayConverter extends AbstractModule implements TypeConverter {
+    private static final Pattern PATTERN = Pattern.compile(" *, *");
+
     @Override
     public Object convert(String value, TypeLiteral<?> toType) {
-        return Iterables.toArray(Splitter.on(Pattern.compile(" *, *")).split(value), String.class);
+        return Iterables.toArray(Splitter.on(PATTERN).split(value), String.class);
     }
 
     @Override

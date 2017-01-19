@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.che.api.git.shared;
 
+import org.eclipse.che.commons.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,19 +29,26 @@ public class ProviderInfo {
 
     private Map<String, String> info = new HashMap<>();
 
+    public ProviderInfo(@NotNull String providerName) {
+        info.put(PROVIDER_NAME, providerName);
+    }
+
     public ProviderInfo(@NotNull String providerName,
                         @NotNull String authenticateUrl) {
         info.put(PROVIDER_NAME, providerName);
         info.put(AUTHENTICATE_URL, authenticateUrl);
     }
 
+
     public String getProviderName() {
         return info.get(PROVIDER_NAME);
     }
 
-    public String getAuthenticateUrl() {
-        return info.get(AUTHENTICATE_URL);
-    }
+    /**
+     * @return authenticate URL. It retrun String or null value.
+     */
+    @Nullable
+    public String getAuthenticateUrl() { return info.get(AUTHENTICATE_URL); }
 
     public void put(String key, String value) {
         info.put(key, value);

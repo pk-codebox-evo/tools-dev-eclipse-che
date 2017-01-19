@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,6 +18,7 @@ import com.google.inject.Singleton;
 import org.eclipse.che.ide.api.extension.ExtensionGinModule;
 import org.eclipse.che.ide.api.preferences.PreferencePagePresenter;
 import org.eclipse.che.ide.api.project.wizard.ImportWizardRegistrar;
+import org.eclipse.che.ide.ext.git.client.GitCheckoutStatusNotificationOperation;
 import org.eclipse.che.ide.ext.git.client.add.AddToIndexView;
 import org.eclipse.che.ide.ext.git.client.add.AddToIndexViewImpl;
 import org.eclipse.che.ide.ext.git.client.branch.BranchView;
@@ -61,6 +62,7 @@ import org.eclipse.che.ide.ext.git.client.reset.files.ResetFilesViewImpl;
 /** @author Andrey Plotnikov */
 @ExtensionGinModule
 public class GitGinModule extends AbstractGinModule {
+
     /** {@inheritDoc} */
     @Override
     protected void configure() {
@@ -87,5 +89,7 @@ public class GitGinModule extends AbstractGinModule {
 
         install(new GinFactoryModuleBuilder().implement(GitOutputConsole.class, GitOutputConsolePresenter.class)
                                              .build(GitOutputConsoleFactory.class));
+
+        bind(GitCheckoutStatusNotificationOperation.class).asEagerSingleton();
     }
 }

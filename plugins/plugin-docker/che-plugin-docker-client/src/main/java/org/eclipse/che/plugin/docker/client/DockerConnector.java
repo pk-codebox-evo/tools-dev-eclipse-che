@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
 import org.eclipse.che.api.core.util.FileCleaner;
+import org.eclipse.che.commons.lang.concurrent.LoggingUncaughtExceptionHandler;
 import org.eclipse.che.commons.annotation.Nullable;
 import org.eclipse.che.commons.lang.TarUtils;
 import org.eclipse.che.commons.lang.ws.rs.ExtMediaType;
@@ -29,6 +30,7 @@ import org.eclipse.che.plugin.docker.client.connection.DockerResponse;
 import org.eclipse.che.plugin.docker.client.exception.ContainerNotFoundException;
 import org.eclipse.che.plugin.docker.client.exception.DockerException;
 import org.eclipse.che.plugin.docker.client.exception.ImageNotFoundException;
+import org.eclipse.che.plugin.docker.client.exception.NetworkNotFoundException;
 import org.eclipse.che.plugin.docker.client.json.ContainerCommitted;
 import org.eclipse.che.plugin.docker.client.json.ContainerCreated;
 import org.eclipse.che.plugin.docker.client.json.ContainerExitStatus;
@@ -146,6 +148,8 @@ public class DockerConnector {
         this.authResolver = authResolver;
         this.apiVersionPathPrefix = dockerApiVersionPathPrefixProvider.get();
         executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder()
+                                                         .setUncaughtExceptionHandler(
+                                                                 LoggingUncaughtExceptionHandler.getInstance())
                                                          .setNameFormat("DockerApiConnector-%d")
                                                          .setDaemon(true)
                                                          .build());
@@ -797,6 +801,12 @@ public class DockerConnector {
                 Future<String> imageIdFuture = executor.submit(() -> {
                     ProgressStatus progressStatus;
                     while ((progressStatus = progressReader.next()) != null) {
+                        if (progressStatus.getError() != null) {
+                            String errorMessage = progressStatus.getError();
+                            if (errorMessage.matches("Error: image .+ not found")) {
+                                throw new ImageNotFoundException(errorMessage);
+                            }
+                        }
                         final String buildImageId = getBuildImageId(progressStatus);
                         if (buildImageId != null) {
                             return buildImageId;
@@ -810,8 +820,13 @@ public class DockerConnector {
                 return imageIdFuture.get();
             } catch (ExecutionException e) {
                 // unwrap exception thrown by task with .getCause()
-                throw new DockerException(e.getCause().getLocalizedMessage(), 500);
+                if (e.getCause() instanceof ImageNotFoundException) {
+                    throw new ImageNotFoundException(e.getCause().getLocalizedMessage());
+                } else {
+                    throw new DockerException(e.getCause().getLocalizedMessage(), 500);
+                }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new DockerException("Docker image build was interrupted", 500);
             }
         }
@@ -938,6 +953,7 @@ public class DockerConnector {
                 // unwrap exception thrown by task with .getCause()
                 throw new DockerException("Docker image pushing failed. Cause: " + e.getCause().getLocalizedMessage(), 500);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new DockerException("Docker image pushing was interrupted", 500);
             }
         }
@@ -1034,6 +1050,7 @@ public class DockerConnector {
                 // unwrap exception thrown by task with .getCause()
                 throw new DockerException(e.getCause().getLocalizedMessage(), 500);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new DockerException("Docker image pulling was interrupted", 500);
             }
         }
@@ -1253,6 +1270,8 @@ public class DockerConnector {
     /**
      * Removes network matching provided params
      *
+     * @throws NetworkNotFoundException
+     *         if network is not found
      * @throws IOException
      *         when a problem occurs with docker api calls
      */
@@ -1261,7 +1280,11 @@ public class DockerConnector {
                                                             .method("DELETE")
                                                             .path(apiVersionPathPrefix + "/networks/" + params.getNetworkId())) {
             final DockerResponse response = connection.request();
-            if (response.getStatus() / 100 != 2) {
+            int status = response.getStatus();
+            if (status == 404) {
+                throw new NetworkNotFoundException(readAndCloseQuietly(response.getInputStream()));
+            }
+            if (status / 100 != 2) {
                 throw getDockerException(response);
             }
         }

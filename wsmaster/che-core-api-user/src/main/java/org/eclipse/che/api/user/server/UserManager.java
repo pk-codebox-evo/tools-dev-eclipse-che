@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,24 +15,25 @@ import com.google.common.collect.Sets;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
+import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.user.Profile;
 import org.eclipse.che.api.core.model.user.User;
 import org.eclipse.che.api.user.server.model.impl.ProfileImpl;
+import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.eclipse.che.api.user.server.spi.PreferenceDao;
 import org.eclipse.che.api.user.server.spi.ProfileDao;
 import org.eclipse.che.api.user.server.spi.UserDao;
-import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.requireNonNull;
@@ -60,7 +61,7 @@ public class UserManager {
     public UserManager(UserDao userDao,
                        ProfileDao profileDao,
                        PreferenceDao preferencesDao,
-                       @Named("user.reserved_names") String[] reservedNames) {
+                       @Named("che.auth.reserved_user_names") String[] reservedNames) {
         this.userDao = userDao;
         this.profileDao = profileDao;
         this.preferencesDao = preferencesDao;
@@ -84,7 +85,8 @@ public class UserManager {
         if (reservedNames.contains(newUser.getName().toLowerCase())) {
             throw new ConflictException(String.format("Username '%s' is reserved", newUser.getName()));
         }
-        final UserImpl user = new UserImpl(generate("user", ID_LENGTH),
+        final String userId = newUser.getId() != null ? newUser.getId() : generate("user", ID_LENGTH);
+        final UserImpl user = new UserImpl(userId,
                                            newUser.getEmail(),
                                            newUser.getName(),
                                            firstNonNull(newUser.getPassword(), generate("", PASSWORD_LENGTH)),
@@ -103,7 +105,7 @@ public class UserManager {
                 userDao.remove(user.getId());
                 profileDao.remove(user.getId());
                 preferencesDao.remove(user.getId());
-            } catch (ConflictException | ServerException rollbackEx) {
+            } catch (ServerException rollbackEx) {
                 LOG.error(format("An attempt to clean up resources due to user creation failure was unsuccessful." +
                                  "Now the system may be in inconsistent state. " +
                                  "User with id '%s' must not exist",
@@ -207,7 +209,37 @@ public class UserManager {
     }
 
     /**
-     * Removes user and his dependencies by given {@code id}.
+     * Finds all users {@code email}.
+     *
+     * @param maxItems
+     *         the maximum number of users to return
+     * @param skipCount
+     *         the number of users to skip
+     * @return user instance
+     * @throws IllegalArgumentException
+     *         when {@code maxItems} or {@code skipCount} is negative
+     * @throws ServerException
+     *         when any other error occurs
+     */
+    public Page<UserImpl> getAll(int maxItems, long skipCount) throws ServerException {
+        checkArgument(maxItems >= 0, "The number of items to return can't be negative.");
+        checkArgument(skipCount >= 0, "The number of items to skip can't be negative.");
+        return userDao.getAll(maxItems, skipCount);
+    }
+
+    /**
+     * Gets total count of all users
+     *
+     * @return user count
+     * @throws ServerException
+     *         when any error occurs
+     */
+    public long getTotalCount() throws ServerException {
+        return userDao.getTotalCount();
+    }
+
+    /**
+     * Removes user by given {@code id}.
      *
      * @param id
      *         user identifier
@@ -220,8 +252,6 @@ public class UserManager {
      */
     public void remove(String id) throws ServerException, ConflictException {
         requireNonNull(id, "Required non-null id");
-        profileDao.remove(id);
-        preferencesDao.remove(id);
         userDao.remove(id);
     }
 }

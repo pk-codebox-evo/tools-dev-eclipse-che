@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,9 +28,11 @@ import org.eclipse.che.ide.api.action.Action;
 import org.eclipse.che.ide.api.action.ActionEvent;
 import org.eclipse.che.ide.api.action.CustomComponentAction;
 import org.eclipse.che.ide.api.action.Presentation;
+import org.eclipse.che.ide.api.parts.PartStack;
+import org.eclipse.che.ide.api.parts.PartStackType;
 import org.eclipse.che.ide.api.parts.Perspective;
 import org.eclipse.che.ide.api.parts.PerspectiveManager;
-import org.eclipse.che.ide.ui.FontAwesome;
+import org.eclipse.che.ide.FontAwesome;
 
 /**
  * @author Evgen Vidolob
@@ -45,7 +47,6 @@ public class ExpandEditorAction extends Action implements CustomComponentAction 
 
     private FlowPanel buttonPanel;
     private FlowPanel button;
-    private boolean   expanded;
 
     @Inject
     public ExpandEditorAction(Resources resources,
@@ -102,21 +103,22 @@ public class ExpandEditorAction extends Action implements CustomComponentAction 
      * Expands or restores the editor.
      */
     public void toggleExpand() {
-        Perspective activePerspective = perspectiveManager.getActivePerspective();
-        if (activePerspective != null) {
-            expanded = !expanded;
+        Perspective perspective = perspectiveManager.getActivePerspective();
+        if (perspective == null) {
+            return;
+        }
 
-            if (expanded) {
-                activePerspective.collapseParts();
-                if (button != null) {
-                    button.getElement().setInnerHTML(FontAwesome.COMPRESS);
-                }
-            } else {
-                activePerspective.expandParts();
-                if (button != null) {
-                    button.getElement().setInnerHTML(FontAwesome.EXPAND);
-                }
-            }
+        PartStack partStack = perspective.getPartStack(PartStackType.EDITING);
+        if (partStack == null) {
+            return;
+        }
+
+        if (partStack.getPartStackState() == PartStack.State.NORMAL) {
+            perspective.maximizeCentralPartStack();
+            button.getElement().setInnerHTML(FontAwesome.COMPRESS);
+        } else {
+            perspective.restore();
+            button.getElement().setInnerHTML(FontAwesome.EXPAND);
         }
     }
 

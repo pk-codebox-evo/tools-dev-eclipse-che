@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.eclipse.che.ide.client;
 
-import elemental.client.Browser;
+import com.google.gwt.dom.client.Document;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.Scheduler;
@@ -37,6 +37,7 @@ import org.eclipse.che.ide.api.event.WindowActionEvent;
 import org.eclipse.che.ide.api.machine.DevMachine;
 import org.eclipse.che.ide.api.machine.WsAgentStateController;
 import org.eclipse.che.ide.api.machine.WsAgentURLModifier;
+import org.eclipse.che.ide.api.theme.Style;
 import org.eclipse.che.ide.api.workspace.WorkspaceServiceClient;
 import org.eclipse.che.ide.api.workspace.event.WorkspaceStartedEvent;
 import org.eclipse.che.ide.context.AppContextImpl;
@@ -47,6 +48,8 @@ import org.eclipse.che.ide.workspace.WorkspacePresenter;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Performs initial application startup.
@@ -109,13 +112,14 @@ public class BootstrapController {
                         DevMachine devMachine = new DevMachine(devMachineDto);
 
                         if (appContext instanceof AppContextImpl) {
-                            ((AppContextImpl)appContext).setDevMachine(devMachine);
                             ((AppContextImpl)appContext).setProjectsRoot(Path.valueOf(devMachineDto.getRuntime().projectsRoot()));
                         }
 
                         wsAgentStateControllerProvider.get().initialize(devMachine);
                         wsAgentURLModifier.initialize(devMachine);
-                        startWsAgentComponents(components.values().iterator());
+                        SortedMap<String, Provider<WsAgentComponent>> sortedComponents = new TreeMap<>();
+                        sortedComponents.putAll(components);
+                        startWsAgentComponents(sortedComponents.values().iterator());
                     }
                 }).catchError(new Operation<PromiseError>() {
                     @Override
@@ -171,14 +175,21 @@ public class BootstrapController {
     }
 
     private void startExtensionsAndDisplayUI() {
+        // Change background color according to the current theme
+        if (Style.theme != null) {
+            Document.get().getBody().getStyle().setBackgroundColor(Style.theme.backgroundColor());
+        }
+
         appStateManagerProvider.get();
+
+        displayIDE();
 
         extensionInitializer.startExtensions();
 
         Scheduler.get().scheduleDeferred(new ScheduledCommand() {
             @Override
             public void execute() {
-                displayIDE();
+                notifyShowIDE();
             }
         });
     }
@@ -186,7 +197,6 @@ public class BootstrapController {
     private void displayIDE() {
         // Start UI
         SimpleLayoutPanel mainPanel = new SimpleLayoutPanel();
-
         RootLayoutPanel.get().add(mainPanel);
 
         // Make sure the root panel creates its own stacking context
@@ -209,15 +219,6 @@ public class BootstrapController {
             @Override
             public void onClose(CloseEvent<Window> event) {
                 eventBus.fireEvent(WindowActionEvent.createWindowClosedEvent());
-            }
-        });
-
-        elemental.html.Window window = Browser.getWindow();
-
-        Scheduler.get().scheduleDeferred(new ScheduledCommand() {
-            @Override
-            public void execute() {
-                notifyShowIDE();
             }
         });
     }
@@ -259,4 +260,5 @@ public class BootstrapController {
 
         var interval = setInterval(setInterval, customInterval);
     }-*/;
+
 }

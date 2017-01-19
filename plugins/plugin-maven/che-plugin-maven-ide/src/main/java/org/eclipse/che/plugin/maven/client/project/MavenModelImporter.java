@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,7 +12,7 @@ package org.eclipse.che.plugin.maven.client.project;
 
 import com.google.web.bindery.event.shared.EventBus;
 
-import org.eclipse.che.api.factory.shared.dto.Factory;
+import org.eclipse.che.api.factory.shared.dto.FactoryDto;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.api.promises.client.PromiseError;
@@ -54,7 +54,7 @@ public class MavenModelImporter implements FactoryAcceptedHandler {
 
     @Override
     public void onFactoryAccepted(FactoryAcceptedEvent event) {
-        final Factory factory = event.getFactory();
+        final FactoryDto factory = event.getFactory();
         final List<ProjectConfigDto> projects = factory.getWorkspace().getProjects();
         final List<String> paths = new ArrayList<>();
         for (ProjectConfigDto project : projects) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,6 +21,7 @@ import org.eclipse.che.ide.api.resources.File;
 import org.eclipse.che.ide.api.resources.marker.Marker;
 import org.eclipse.che.ide.api.resources.marker.PresentableTextMarker;
 import org.eclipse.che.ide.resource.Path;
+import org.eclipse.che.ide.util.TextUtils;
 
 /**
  * Default implementation of the {@code File}.
@@ -35,6 +36,8 @@ class FileImpl extends ResourceImpl implements File {
 
     private final String contentUrl;
 
+    private String modificationStamp;
+
     @Inject
     protected FileImpl(@Assisted Path path,
                        @Assisted String contentUrl,
@@ -48,12 +51,6 @@ class FileImpl extends ResourceImpl implements File {
     @Override
     public final int getResourceType() {
         return FILE;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public String getMediaType() {
-        throw new UnsupportedOperationException();
     }
 
     /** {@inheritDoc} */
@@ -80,12 +77,6 @@ class FileImpl extends ResourceImpl implements File {
         } else {
             return getName();
         }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public String getPath() {
-        return getLocation().toString();
     }
 
     /** {@inheritDoc} */
@@ -119,6 +110,8 @@ class FileImpl extends ResourceImpl implements File {
     /** {@inheritDoc} */
     @Override
     public Promise<Void> updateContent(String content) {
+        setModificationStamp(TextUtils.md5(content));
+
         return resourceManager.write(this, content);
     }
 
@@ -136,5 +129,15 @@ class FileImpl extends ResourceImpl implements File {
                           .add("resource", getResourceType())
                           .add("contentUrl", contentUrl)
                           .toString();
+    }
+
+    @Override
+    public void setModificationStamp(String modificationStamp) {
+        this.modificationStamp = modificationStamp;
+    }
+
+    @Override
+    public String getModificationStamp() {
+        return modificationStamp;
     }
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -44,21 +44,24 @@ import static org.testng.Assert.assertEquals;
 @Listeners(value = {EverrestJetty.class, MockitoTestNGListener.class})
 public class MachineServiceTest {
     @SuppressWarnings("unused")
-    private static final ApiExceptionMapper                     MAPPER = new ApiExceptionMapper();
+    static final ApiExceptionMapper                     MAPPER = new ApiExceptionMapper();
     @SuppressWarnings("unused")
-    private static final WorkspaceServiceTest.EnvironmentFilter FILTER = new WorkspaceServiceTest.EnvironmentFilter();
+    static final WorkspaceServiceTest.EnvironmentFilter FILTER = new WorkspaceServiceTest.EnvironmentFilter();
     @Mock
-    private WorkspaceManager      wsManager;
+    WorkspaceManager      wsManager;
     @Mock
-    private MachineProcessManager machineProcessManager;
+    MachineProcessManager machineProcessManager;
+    @Mock
+    CheEnvironmentValidator environmentValidator;
 
-    private MachineService service;
+    MachineService service;
 
     @BeforeMethod
     public void setup() {
         service = new MachineService(machineProcessManager,
                                      new MachineServiceLinksInjector(),
-                                     wsManager);
+                                     wsManager,
+                                     environmentValidator);
     }
 
     @Test(dataProvider = "illegalMachineConfigProvider")

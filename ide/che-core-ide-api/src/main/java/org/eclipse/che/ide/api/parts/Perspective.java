@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@ package org.eclipse.che.ide.api.parts;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 
 import org.eclipse.che.commons.annotation.Nullable;
+import org.eclipse.che.ide.api.component.StateComponent;
 import org.eclipse.che.ide.api.constraints.Constraints;
 
 import javax.validation.constraints.NotNull;
@@ -23,13 +24,22 @@ import javax.validation.constraints.NotNull;
  *
  * @author Dmitry Shnurenko
  */
-public interface Perspective {
+public interface Perspective extends StateComponent {
 
-    /** Restores editor parts state with saving of parts sizes. */
-    void expandParts();
+    /** Maximizes central part stack */
+    void maximizeCentralPartStack();
 
-    /** Hides editor parts. */
-    void collapseParts();
+    /** Maximize left part stack */
+    void maximizeLeftPartStack();
+
+    /** Maximize right part stack */
+    void maximizeRightPartStack();
+
+    /** Maximizes bottom part stack */
+    void maximizeBottomPartStack();
+
+    /** Restores perspective to the state before maximizing */
+    void restore();
 
     /** Store perspective state before changing. */
     void storeState();
@@ -110,4 +120,5 @@ public interface Perspective {
      *         container in which need expose view
      */
     void go(@NotNull AcceptsOneWidget container);
+
 }

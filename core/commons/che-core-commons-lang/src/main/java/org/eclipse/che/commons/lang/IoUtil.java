@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -241,7 +241,6 @@ public class IoUtil {
         }
         return file;
     }
-
 
 
     /**
@@ -502,13 +501,13 @@ public class IoUtil {
         }
     }
 
-    private static final char[] hex = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static final char[] HEX = "0123456789abcdef".toCharArray();
 
     public static String toHex(byte[] hash) {
         StringBuilder b = new StringBuilder();
         for (int i = 0; i < hash.length; i++) {
-            b.append(hex[(hash[i] >> 4) & 0x0f]);
-            b.append(hex[hash[i] & 0x0f]);
+            b.append(HEX[(hash[i] >> 4) & 0x0f]);
+            b.append(HEX[hash[i] & 0x0f]);
         }
         return b.toString();
     }

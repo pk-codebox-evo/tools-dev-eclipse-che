@@ -1,102 +1,70 @@
 [
   {
-    "id": "che-in-che",
+    "id": "java-mysql",
     "creator": "ide",
-    "name": "Eclipse Che",
-    "description": "Utilities to build Che in Che with Docker, JDK 8, and Maven.",
+    "name": "Java-MySQL",
+    "description": "Multi-machine environment with Default Java Stack and MySQL database",
     "scope": "general",
     "tags": [
-      "Docker",
-      "Java",
-      "JDK",
-      "Maven",
-      "Alpine",
-      "Git"
+      "Java 1.8, Tomcat 8, MySQL 5.7"
     ],
     "components": [
       {
-        "name": "Docker",
-        "version": "1.12.0"
-      },
-      {
         "name": "JDK",
-        "version": "1.8.0_92"
+        "version": "1.8.0_45"
       },
       {
         "name": "Maven",
-        "version": "3.3.9"
+        "version": "3.2.2"
+      },
+      {
+        "name": "Tomcat",
+        "version": "8.0.24"
       }
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/alpine_jdk8"
+      "origin": "eclipse/ubuntu_jdk8"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 2000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {}
+            },
+            "db": {
+              "agents": [
+                "org.eclipse.che.terminal"
+              ],
+              "servers": {},
+              "attributes" : {}
             }
-          ]
+          },
+          "recipe": {
+            "content": "services:\n db:\n  image: mysql\n  environment:\n   MYSQL_ROOT_PASSWORD: password\n   MYSQL_DATABASE: petclinic\n   MYSQL_USER: petclinic\n   MYSQL_PASSWORD: password\n  mem_limit: 1073741824\n dev-machine:\n  image: eclipse/ubuntu_jdk8\n  mem_limit: 2147483648\n  depends_on:\n    - db",
+            "contentType": "application/x-yaml",
+            "type": "compose"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
       "commands": [
         {
-          "commandLine": "sudo docker rename che-server che-host;sudo apk update; sudo apk add curl;export HOST_IP=$(curl -s https://4.ifcfg.me/)",
-          "name": "1. Setup Che in Che",
-          "type": "custom"
-        },
-        {
-          "commandLine": "mvn clean install -f /projects/che/assembly/assembly-main",
-          "name": "2. Build Che in Che",
-          "type": "custom"
-        },
-        {
-          "commandLine": 'export CHE_BIN_PATH=$(ls -d /projects/che/assembly/assembly-main/target/eclipse-che-*/eclipse-che-*); sudo docker run -t -v /var/run/docker.sock:/var/run/docker.sock --env CHE_LOCAL_BINARY=${CHE_BIN_PATH//projects/"home/user/che/workspaces/che"} --env CHE_HOST_IP=$HOST_IP --env CHE_PORT=54321 codenvy/che-launcher start',
-          "name": "3. Run Che in Che",
-          "type": "custom",
-          "attributes": {
-              "previewUrl": "http://<host.ip>:54321/"
-            }
-        },
-        {
-          "commandLine": "sudo docker run -t -v /var/run/docker.sock:/var/run/docker.sock codenvy/che-launcher stop",
-          "name": "4. Stop Che in Che",
-          "type": "custom"
-        },
-        {
-          "commandLine": "sudo docker rm -f che-server",
-          "name": "** Kill Che in Che **",
+          "commandLine": "mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -e 'show databases;'",
+          "name": "show databases",
           "type": "custom"
         }
-
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
-      "name": "type-che.svg",
+      "name": "type-java-mysql.svg",
       "mediaType": "image/svg+xml"
     }
   },
@@ -131,29 +99,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_jdk8"
+      "origin": "eclipse/ubuntu_jdk8"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_jdk8",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -165,14 +132,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-java.svg",
       "mediaType": "image/svg+xml"
@@ -193,41 +152,32 @@
     "components": [],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_jdk8"
+      "origin": "eclipse/ubuntu_jdk8"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_jdk8",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-blank.svg",
       "mediaType": "image/svg+xml"
@@ -260,29 +210,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_android"
+      "origin": "eclipse/ubuntu_android"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_android",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -294,14 +243,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-android.svg",
       "mediaType": "image/svg+xml"
@@ -336,29 +277,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/cpp_gcc"
+      "origin": "eclipse/cpp_gcc"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/cpp_gcc",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -370,14 +310,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-cpp.svg",
       "mediaType": "image/svg+xml"
@@ -406,29 +338,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/dotnet_core"
+      "origin": "eclipse/dotnet_core"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/dotnet_core",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -451,20 +382,12 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-dotnet.svg",
       "mediaType": "image/svg+xml"
     }
   },
-   {
+  {
     "id": "go-default",
     "creator": "ide",
     "name": "Go",
@@ -486,29 +409,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_go"
+      "origin": "eclipse/ubuntu_go"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_go",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -523,14 +445,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-go.svg",
       "mediaType": "image/svg+xml"
@@ -564,41 +478,32 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/hadoop-dev"
+      "origin": "eclipse/hadoop-dev"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/hadoop-dev",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-hadoop.svg",
       "mediaType": "image/svg+xml"
@@ -650,41 +555,32 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/node"
+      "origin": "eclipse/node"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/node",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-node.svg",
       "mediaType": "image/svg+xml"
@@ -694,7 +590,7 @@
     "id": "php-default",
     "creator": "ide",
     "name": "PHP",
-    "description": "Default PHP Stack with PHP 5.5, most popular extensions and composer.",
+    "description": "Default PHP Stack with PHP 5.6, most popular extensions and dockerimager.",
     "scope": "general",
     "tags": [
       "Ubuntu",
@@ -702,16 +598,16 @@
       "PHP",
       "mysql",
       "sqlite",
-      "Apaide",
-      "Composer"
+      "Apache",
+      "dockerimager"
     ],
     "components": [
       {
         "name": "PHP",
-        "version": "5.5.9"
+        "version": "5.6.24"
       },
       {
-        "name": "Apaide",
+        "name": "Apache",
         "version": "2"
       },
       {
@@ -723,39 +619,54 @@
         "version": "---"
       },
       {
-        "name": "Composer",
+        "name": "dockerimager",
         "version": "---"
       }
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/php"
+      "origin": "eclipse/php"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh", "org.eclipse.che.ls.php", "org.eclipse.che.ls.json"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/php",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
       "commands": [
+        {
+          "name": "run php script",
+          "type": "custom",
+          "commandLine": "[ -z ${editor.current.file.path} ] && echo \"Open a PHP file in the editor before executing this command.\" || php ${editor.current.file.path}",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "debug php script",
+          "type": "custom",
+          "commandLine": "[ -z ${editor.current.file.path} ] && echo \"Open a PHP file in the editor before executing this command.\" || QUERY_STRING=\"start_debug=1&debug_host=localhost&debug_port=10137\" php ${editor.current.file.path}",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
         {
           "name": "start apache",
           "type": "custom",
@@ -782,14 +693,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-php.svg",
       "mediaType": "image/svg+xml"
@@ -819,29 +722,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_python:latest"
+      "origin": "eclipse/ubuntu_python:latest"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_python:latest",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -856,14 +758,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-python.svg",
       "mediaType": "image/svg+xml"
@@ -898,29 +792,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_rails"
+      "origin": "eclipse/ubuntu_rails"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_rails",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -943,14 +836,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-ruby.svg",
       "mediaType": "image/svg+xml"
@@ -972,42 +857,83 @@
       }
     ],
     "source": {
-      "type": "dockerfile",
-      "origin": "FROM codenvy/debian_jre\nCMD tail -f /dev/null"
+      "type": "image",
+      "origin": "eclipse/debian_jre"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/debian_jre",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null
-    },
-    "acl": [
+    }
+  },
+  {
+    "id": "debianlsp",
+    "creator": "ide",
+    "name": "Debian LSP",
+    "description": "Simple stack with Debian (Jessie) to test LSP",
+    "scope": "advanced",
+    "tags": [
+      "Debian",
+      "LSP"
+    ],
+    "components": [
       {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
+        "name": "Debian",
+        "version": "Jessie"
       }
-    ]
+    ],
+    "source": {
+      "type": "image",
+      "origin": "eclipse/debian_jre"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal",
+                "org.eclipse.che.ws-agent",
+                "org.eclipse.che.ssh",
+                "org.eclipse.che.ls.csharp",
+                "org.eclipse.che.ls.json",
+                "org.eclipse.che.ls.php"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "eclipse/debian_jre",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null
+    }
   },
   {
     "id": "java-centos",
@@ -1043,29 +969,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/centos_jdk8"
+      "origin": "eclipse/centos_jdk8"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/centos_jdk8",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -1077,14 +1002,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-java.svg",
       "mediaType": "image/svg+xml"
@@ -1124,29 +1041,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/debian_jdk8"
+      "origin": "eclipse/debian_jdk8"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/debian_jdk8",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -1158,14 +1074,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-java.svg",
       "mediaType": "image/svg+xml"
@@ -1202,35 +1110,34 @@
         "version": "---"
       },
       {
-        "name": "Composer",
+        "name": "dockerimager",
         "version": "---"
       }
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/php:gae"
+      "origin": "eclipse/php:gae"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh", "org.eclipse.che.ls.php", "org.eclipse.che.ls.json"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/php:gae",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -1245,14 +1152,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-php.svg",
       "mediaType": "image/svg+xml"
@@ -1282,29 +1181,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_python:2.7"
+      "origin": "eclipse/ubuntu_python:2.7"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_python:2.7",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -1319,14 +1217,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-python.svg",
       "mediaType": "image/svg+xml"
@@ -1353,29 +1243,28 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/ubuntu_python:gae_python2.7"
+      "origin": "eclipse/ubuntu_python:gae_python2.7"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_python:gae_python2.7",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -1390,14 +1279,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-python.svg",
       "mediaType": "image/svg+xml"
@@ -1443,41 +1324,32 @@
     ],
     "source": {
       "type": "image",
-      "origin": "codenvy/selenium"
+      "origin": "eclipse/selenium"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/selenium",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null
-    },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ]
+    }
   },
   {
     "id": "tomee-default",
@@ -1486,13 +1358,7 @@
     "description": "Default Java Stack with JDK 8, Maven and Apache TomEE 1.7.3.",
     "scope": "advanced",
     "tags": [
-      "Ubuntu",
-      "Java",
-      "JDK",
-      "Maven",
-      "TomEE",
-      "Subversion",
-      "Git"
+      "TomEE"
     ],
     "components": [
       {
@@ -1513,26 +1379,25 @@
       "origin": "tomitribe/ubuntu_tomee_173_jdk8"
     },
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "tomitribe/ubuntu_tomee_173_jdk8",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null,
@@ -1544,14 +1409,6 @@
         }
       ]
     },
-    "acl": [
-      {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
-      }
-    ],
     "stackIcon": {
       "name": "type-java.svg",
       "mediaType": "image/svg+xml"
@@ -1573,41 +1430,639 @@
       }
     ],
     "workspaceConfig": {
-      "environments": [
-        {
-          "name": "default",
-          "recipe": null,
-          "machineConfigs": [
-            {
-              "name": "default",
-              "limits": {
-                "ram": 1000
-              },
-              "source": {
-                "location": "stub",
-                "type": "dockerfile"
-              },
-              "type": "docker",
-              "dev": true
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
             }
-          ]
+          },
+          "recipe": {
+            "location": "eclipse/ubuntu_jre",
+            "type": "dockerimage"
+          }
         }
-      ],
+      },
       "name": "default",
       "defaultEnv": "default",
       "description": null
     },
     "source": {
-      "type": "dockerfile",
-      "origin": "FROM codenvy/ubuntu_jre\nCMD tail -f /dev/null"
-    },
-    "acl": [
+      "type": "image",
+      "origin": "eclipse/ubuntu_jre"
+    }
+  },
+  {
+    "id": "bitnami-express",
+    "creator": "Bitnami",
+    "name": "Bitnami Express",
+    "description": "Default Express stack with Node 7.0.0, Express 4.14.0, MongoDB 3.2.9.",
+    "scope": "advanced",
+    "tags": [
+      "Express"
+    ],
+    "components": [
       {
-        "user": "*",
-        "actions": [
-          "search"
-        ]
+        "name": "Node.JS",
+        "version": "7.0.0"
+      },
+      {
+        "name": "Express",
+        "version": "4.14.0"
+      },
+      {
+        "name": "Bower",
+        "version": "1.7.9"
+      },
+      {
+        "name": "NPM",
+        "version": "---"
+      },
+      {
+        "name": "MongoDB",
+        "version": "3.2.9"
       }
-    ]
+    ],
+    "source": {
+      "type": "image",
+      "origin": "bitnami/che-express:4.14.0-r13"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "bitnami/che-express:4.14.0-r13",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": []
+    },
+    "stackIcon": {
+      "name": "type-bitnami.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "bitnami-swift",
+    "creator": "Bitnami",
+    "name": "Bitnami Swift",
+    "description": "Default Swift stack with Swift 3.0.1",
+    "scope": "advanced",
+    "tags": [
+      "Swift"
+    ],
+    "components": [
+      {
+        "name": "Swift",
+        "version": "3.0.1"
+      }
+    ],
+    "source": {
+      "type": "image",
+      "origin": "bitnami/che-swift:3.0.1-RELEASE-r2"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "bitnami/che-swift:3.0.1-RELEASE-r2",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": []
+    },
+    "stackIcon": {
+      "name": "type-bitnami.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "bitnami-laravel",
+    "creator": "Bitnami",
+    "name": "Bitnami Laravel",
+    "description": "Default Laravel stack with PHP 7.0.10, Laravel 5.2.31, MariaDB 10.1.19.",
+    "scope": "advanced",
+    "tags": [
+      "Laravel"
+    ],
+    "components": [
+      {
+        "name": "PHP",
+        "version": "7.0.10"
+      },
+      {
+        "name": "Laravel",
+        "version": "5.2.31"
+      },
+      {
+        "name": "MariaDB",
+        "version": "10.1.14"
+      }
+    ],
+    "source": {
+      "type": "image",
+      "origin": "bitnami/che-laravel:5.2.31-r11"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh", "org.eclipse.che.ls.php", "org.eclipse.che.ls.json"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "bitnami/che-laravel:5.2.31-r11",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": []
+    },
+    "stackIcon": {
+      "name": "type-bitnami.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "bitnami-rails",
+    "creator": "Bitnami",
+    "name": "Bitnami Rails",
+    "description": "Bitnami Rails stack with Ruby 2.3.1, Rails 5.0.0.1, MariaDB 10.1.14.",
+    "scope": "advanced",
+    "tags": [
+      "BitnamiRails"
+    ],
+    "components": [
+      {
+        "name": "Ruby",
+        "version": "2.3.1"
+      },
+      {
+        "name": "Rails",
+        "version": "5.0.0.1"
+      },
+      {
+        "name": "MariaDB",
+        "version": "10.1.14"
+      }
+    ],
+    "source": {
+      "type": "image",
+      "origin": "bitnami/che-rails:5.0.0.1-r5"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "bitnami/che-rails:5.0.0.1-r5",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": []
+    },
+    "stackIcon": {
+      "name": "type-bitnami.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "bitnami-codeigniter",
+    "creator": "Bitnami",
+    "name": "Bitnami Codeigniter",
+    "description": "Default CodeIgniter stack with PHP 7.0.11, CodeIgniter 3.1.0, MariaDB 10.1.19.",
+    "scope": "advanced",
+    "tags": [
+      "CodeIgniter"
+    ],
+    "components": [
+      {
+        "name": "PHP",
+        "version": "7.0.11"
+      },
+      {
+        "name": "Codeigniter",
+        "version": "3.1.0"
+      },
+      {
+        "name": "MariaDB",
+        "version": "10.1.19"
+      }
+    ],
+    "source": {
+      "type": "image",
+      "origin": "bitnami/che-codeigniter:3.1.0-r11"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh", "org.eclipse.che.ls.php", "org.eclipse.che.ls.json"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "bitnami/che-codeigniter:3.1.0-r11",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": []
+    },
+    "stackIcon": {
+      "name": "type-bitnami.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "bitnami-symfony",
+    "creator": "Bitnami",
+    "name": "Bitnami Symfony",
+    "description": "Default Symfony stack with PHP 7.0.11, Symfony 3.1.3, MariaDB 10.1.19.",
+    "scope": "advanced",
+    "tags": [
+      "Symfony"
+    ],
+    "components": [
+      {
+        "name": "PHP",
+        "version": "7.0.11"
+      },
+      {
+        "name": "Symfony",
+        "version": "3.1.3"
+      },
+      {
+        "name": "MariaDB",
+        "version": "10.1.19"
+      }
+    ],
+    "source": {
+      "type": "image",
+      "origin": "bitnami/che-symfony:3.1.3-r8"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh", "org.eclipse.che.ls.php", "org.eclipse.che.ls.json"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "bitnami/che-symfony:3.1.3-r8",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": []
+    },
+    "stackIcon": {
+      "name": "type-bitnami.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "bitnami-java-play",
+    "creator": "Bitnami",
+    "name": "Bitnami Play for Java",
+    "description": "Default Play stack with OpenJDK 1.8.0 and Play 1.3.10.",
+    "scope": "advanced",
+    "tags": [
+      "Play"
+    ],
+    "components": [
+      {
+        "name": "OpenJDK",
+        "version": "1.8.0"
+      },
+      {
+        "name": "Play",
+        "version": "2.55"
+      },
+      {
+        "name": "Activator",
+        "version": "1.13.10"
+      }
+    ],
+    "source": {
+      "type": "image",
+      "origin": "bitnami/che-java-play:1.3.10-r6"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "bitnami/che-java-play:1.3.10-r6",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": []
+    },
+    "stackIcon": {
+      "name": "type-bitnami.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "zend",
+    "creator": "ide",
+    "name": "Zend",
+    "description": "Zend stack with PHP 7, Zend Server 9 and Z-Ray.",
+    "scope": "advanced",
+    "tags": [
+      "PHP",
+      "Zend",
+      "Z-Ray",
+      "Composer",
+      "Ubuntu",
+      "Git"
+    ],
+    "components": [
+      {
+        "name": "PHP",
+        "version": "7.0.11"
+      },
+      {
+        "name": "Zend Server",
+        "version": "9.0.1"
+      },
+      {
+        "name": "Composer",
+        "version": "---"
+      }
+    ],
+    "source": {
+      "type": "image",
+      "origin": "kaloyanraev/che-zendserver"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh", "org.eclipse.che.ls.php", "org.eclipse.che.ls.json"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648"
+              }
+            }
+          },
+          "recipe": {
+            "location": "kaloyanraev/che-zendserver",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": [
+        {
+          "name": "run php script",
+          "type": "custom",
+          "commandLine": "[ -z ${editor.current.file.path} ] && echo \"Open a PHP file in the editor before executing this command.\" || php ${editor.current.file.path}",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "debug php script",
+          "type": "custom",
+          "commandLine": "[ -z ${editor.current.file.path} ] && echo \"Open a PHP file in the editor before executing this command.\" || QUERY_STRING=\"start_debug=1&debug_host=localhost&debug_port=10137\" php ${editor.current.file.path}",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "restart zend server",
+          "type": "custom",
+          "commandLine": "sudo sqlite3 /usr/local/zend/var/db/zsd.db \"UPDATE ZSD_DIRECTIVES SET DISK_VALUE='http://${server.port.10081}/ZendServer' WHERE NAME='zray.zendserver_ui_url'\" && sudo sed -i 's#zray.zendserver_ui_url=.*#zray.zendserver_ui_url=http://${server.port.10081}/ZendServer#g' /usr/local/zend/etc/conf.d/zray.ini && sudo /usr/local/zend/bin/zendctl.sh restart",
+          "attributes": {
+            "previewUrl": "http://${server.port.80}"
+          }
+        },
+        {
+          "name": "stop zend server",
+          "type": "custom",
+          "commandLine": "sudo /usr/local/zend/bin/zendctl.sh stop",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "show admin password",
+          "type": "custom",
+          "commandLine": "echo \"Zend Server admin password is `sudo cat /root/zend-password`\"",
+          "attributes": {
+            "previewUrl": "http://${server.port.10081}"
+          }
+        }
+      ]
+    },
+    "stackIcon": {
+      "name": "type-zend.svg",
+      "mediaType": "image/svg+xml"
+    }
+  },
+  {
+    "id": "platformio",
+    "creator": "ide",
+    "name": "PlatformIO",
+    "description": "Stack for IoT development",
+    "scope": "general",
+    "tags": [
+      "PlatformIO",
+      "IoT",
+      "embedded",
+      "arduino",
+      "mbed"
+    ],
+    "components": [
+      {
+        "name": "Python",
+        "version": "2.7"
+      },
+      {
+        "name": "pip",
+        "version": "8.1.1"
+      },
+      {
+        "name": "PlatformIO",
+        "version": "3.2.0"
+      }
+    ],
+    "source": {
+      "type": "image",
+        "origin": "code/pio:latest"
+    },
+    "workspaceConfig": {
+      "environments": {
+        "default": {
+          "machines": {
+            "dev-machine": {
+              "agents": [
+                "org.eclipse.che.terminal", "org.eclipse.che.ws-agent", "org.eclipse.che.ssh"
+              ],
+              "servers": {},
+              "attributes" : {
+                "memoryLimitBytes": "2147483648",
+                "auto_snapshot": "true",
+                "auto_restore": "true"
+
+              }
+            }
+          },
+          "recipe": {
+            "location": "eclipse/platformio:latest",
+            "type": "dockerimage"
+          }
+        }
+      },
+      "name": "default",
+      "defaultEnv": "default",
+      "description": null,
+      "commands": [
+        {
+          "name": "run",
+          "type": "custom",
+          "commandLine": "pio run -d ${current.project.path}",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "upload",
+          "type": "custom",
+          "commandLine": "pio run -d ${current.project.path} -t upload",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "clean",
+          "type": "custom",
+          "commandLine": "pio run -d ${current.project.path} -t clean",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "Remote: Device list",
+          "type": "custom",
+          "commandLine": "pio remote device list",
+          "attributes": {
+            "previewUrl": ""
+          }
+        },
+        {
+          "name": "Remote: Upload",
+          "type": "custom",
+          "commandLine": "pio remote run -d ${current.project.path} -t upload",
+          "attributes": {
+            "previewUrl": ""
+          }
+        }
+      ]
+    },
+    "stackIcon": {
+      "name": "type-python.svg",
+      "mediaType": "image/svg+xml"
+    }
   }
 ]

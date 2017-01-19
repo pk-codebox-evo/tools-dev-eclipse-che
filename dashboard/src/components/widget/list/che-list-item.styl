@@ -9,6 +9,7 @@
   border-bottom 1px solid $list-separator-color
 
 .che-list-item-content
+  display inline-block
   line-height 40px
   overflow hidden
   width 100%
@@ -28,10 +29,18 @@
 .che-list-item-row *
   outline none
 
+.che-list-item-row:not(:hover) .tooltip
+  display none !important
+
 .che-list-item-details
   line-height inherit
   font-size 12px
   cursor pointer
+
+  span:not(.tooltip)
+    max-width 100%
+    white-space nowrap
+    padding-right 3px
 
   & .che-xs-header
     display inline-block
@@ -80,6 +89,9 @@
     line-height 16px
     margin-right 10px
 
+    span
+      padding-right 0
+
   .tooltip
     color $white-color
 
@@ -95,3 +107,8 @@
     font-size 14px
     line-height 60px
     color $label-info-color
+
+.che-list-item-secondary
+  color $list-action-color
+  line-height 18px
+  padding-right 10px

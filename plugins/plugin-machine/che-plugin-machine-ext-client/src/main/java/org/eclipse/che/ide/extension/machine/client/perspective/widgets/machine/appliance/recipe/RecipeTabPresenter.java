@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,13 +14,9 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.google.inject.Inject;
 
-import org.eclipse.che.api.promises.client.Operation;
-import org.eclipse.che.api.promises.client.OperationException;
-import org.eclipse.che.api.promises.client.PromiseError;
+import org.eclipse.che.api.core.model.machine.Machine;
 import org.eclipse.che.ide.extension.machine.client.RecipeScriptDownloadServiceClient;
-import org.eclipse.che.ide.extension.machine.client.machine.Machine;
 import org.eclipse.che.ide.extension.machine.client.perspective.widgets.tab.content.TabPresenter;
-import org.eclipse.che.ide.util.loging.Log;
 
 import javax.validation.constraints.NotNull;
 
@@ -50,7 +46,7 @@ public class RecipeTabPresenter implements TabPresenter {
      *         machine for which need update information
      */
     public void updateInfo(@NotNull final Machine machine) {
-        if (machine.getRecipeType() == null) {
+        /*if (machine.getRecipeType() == null) {
             Log.error(RecipeTabPresenter.class, "Recipe type is null for machine '" + machine.getId() + "'");
             view.setScript("Recipe type is null for machine '" + machine.getId() + "'");
             return;
@@ -76,7 +72,7 @@ public class RecipeTabPresenter implements TabPresenter {
                 break;
             case "default":
                 view.setScript("Recipe type: " + machine.getRecipeType());
-        }
+        }*/
     }
 
     /** {@inheritDoc} */

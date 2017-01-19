@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -30,13 +30,13 @@ public class MachineImpl implements Machine {
     }
 
     private final MachineConfigImpl      machineConfig;
-    private final String                 id;
     private final MachineRuntimeInfoImpl machineRuntime;
     private final String                 workspace;
     private final String                 envName;
     private final String                 owner;
 
     private MachineStatus status;
+    private String        id;
 
     public MachineImpl(MachineConfig machineConfig,
                        String id,
@@ -72,6 +72,10 @@ public class MachineImpl implements Machine {
     @Override
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     @Override

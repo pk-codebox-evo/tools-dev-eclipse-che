@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -186,6 +186,61 @@ public class FileTreeWatcherTest {
         ArgumentCaptor<String> updatedEvents = ArgumentCaptor.forClass(String.class);
         verify(notificationHandler, times(2)).handleFileWatcherEvent(eq(MODIFIED), eq(testDirectory), updatedEvents.capture(), anyBoolean());
         assertEquals(updated, newHashSet(updatedEvents.getAllValues()));
+    }
+
+    @Test
+    public void watchesFolderModifiedOnDelete() throws Exception {
+        final String watchedDir = fileWatcherTestTree.createDirectory("", "watched");
+        final String notifiedFile = fileWatcherTestTree.createFile("watched");
+        final Set<String> deleted = newHashSet(notifiedFile);
+        final Set<String> modified = newHashSet(watchedDir);
+
+        final FileWatcherNotificationHandler notificationHandler = aNotificationHandler();
+        fileWatcher = new FileTreeWatcher(testDirectory, newHashSet(), notificationHandler);
+        fileWatcher.startup();
+
+        Thread.sleep(1000);
+
+        fileWatcherTestTree.delete(notifiedFile);
+
+        Thread.sleep(5000);
+
+        verify(notificationHandler, never()).errorOccurred(eq(testDirectory), any(Throwable.class));
+
+        final ArgumentCaptor<String> deletedEvents = ArgumentCaptor.forClass(String.class);
+        verify(notificationHandler, times(1)).handleFileWatcherEvent(eq(DELETED), eq(testDirectory), deletedEvents.capture(), anyBoolean());
+        assertEquals(deleted, newHashSet(deletedEvents.getAllValues()));
+
+        final ArgumentCaptor<String> modifiedEvents = ArgumentCaptor.forClass(String.class);
+        verify(notificationHandler, times(1)).handleFileWatcherEvent(eq(MODIFIED), eq(testDirectory), modifiedEvents.capture(), anyBoolean());
+        assertEquals(modified, newHashSet(modifiedEvents.getAllValues()));
+    }
+
+    @Test
+    public void watchesFolderModifiedOnCreate() throws Exception {
+        final String watchedDir = fileWatcherTestTree.createDirectory("", "watched");
+        final Set<String> modified = newHashSet(watchedDir);
+
+        final FileWatcherNotificationHandler notificationHandler = aNotificationHandler();
+        fileWatcher = new FileTreeWatcher(testDirectory, newHashSet(), notificationHandler);
+        fileWatcher.startup();
+
+        Thread.sleep(1000);
+
+        final String notifiedFile = fileWatcherTestTree.createFile("watched");
+        final Set<String> created = newHashSet(notifiedFile);
+
+        Thread.sleep(5000);
+
+        verify(notificationHandler, never()).errorOccurred(eq(testDirectory), any(Throwable.class));
+
+        final ArgumentCaptor<String> deletedEvents = ArgumentCaptor.forClass(String.class);
+        verify(notificationHandler, times(1)).handleFileWatcherEvent(eq(CREATED), eq(testDirectory), deletedEvents.capture(), anyBoolean());
+        assertEquals(created, newHashSet(deletedEvents.getAllValues()));
+
+        final ArgumentCaptor<String> modifiedEvents = ArgumentCaptor.forClass(String.class);
+        verify(notificationHandler, times(1)).handleFileWatcherEvent(eq(MODIFIED), eq(testDirectory), modifiedEvents.capture(), anyBoolean());
+        assertEquals(modified, newHashSet(modifiedEvents.getAllValues()));
     }
 
     @Test

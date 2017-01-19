@@ -1,6 +1,6 @@
 <%--
 
-    Copyright (c) 2012-2016 Codenvy, S.A.
+    Copyright (c) 2012-2017 Codenvy, S.A.
     All rights reserved. This program and the accompanying materials
     are made available under the terms of the Eclipse Public License v1.0
     which accompanies this distribution, and is available at
@@ -53,9 +53,13 @@
                 window.alert("Unable to initialize IDE");
             }
         };
+
     </script>
 
     <script type="text/javascript" language="javascript" src="/_app/browserNotSupported.js"></script>
-    <script type="text/javascript" language="javascript" src="/_app/_app.nocache.js"></script>
+    <script type="text/javascript" language="javascript" async="true" src="/_app/_app.nocache.js"></script>
 </head>
+
+<body style="background-color: #21252b; transition: background-color 0.5s ease;" />
+
 </html>

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -70,19 +70,18 @@ public class SshManager {
         ByteArrayOutputStream publicBuff = new ByteArrayOutputStream();
         keyPair.writePublicKey(publicBuff, null);
 
-        final SshPairImpl generatedSshPair = new SshPairImpl(service,
+        final SshPairImpl generatedSshPair = new SshPairImpl(owner,
+                                                             service,
                                                              name,
                                                              publicBuff.toString(),
                                                              privateBuff.toString());
-        sshDao.create(owner, generatedSshPair);
+        sshDao.create(generatedSshPair);
         return generatedSshPair;
     }
 
     /**
      * Creates new ssh pair for specified user.
      *
-     * @param owner
-     *         the id of the user who will be the owner of the ssh pair
      * @param sshPair
      *         ssh pair to create
      * @throws ConflictException
@@ -90,8 +89,8 @@ public class SshManager {
      * @throws ServerException
      *         when any other error occurs during ssh pair creating
      */
-    public void createPair(String owner, SshPairImpl sshPair) throws ServerException, ConflictException {
-        sshDao.create(owner, sshPair);
+    public void createPair(SshPairImpl sshPair) throws ServerException, ConflictException {
+        sshDao.create(sshPair);
     }
 
     /**

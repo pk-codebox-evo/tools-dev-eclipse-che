@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,12 +25,22 @@ public class FileContentUpdateEvent extends GwtEvent<FileContentUpdateHandler> {
     private final String filePath;
 
     /**
+     * Encoded content.
+     */
+    private String modificationStamp;
+
+    /**
      * Constructor.
      * 
      * @param filePath the path of the file that changed
      */
     public FileContentUpdateEvent(final String filePath) {
         this.filePath = filePath;
+    }
+
+    public FileContentUpdateEvent(final String filePath, final String contentStamp) {
+        this.filePath = filePath;
+        this.modificationStamp = contentStamp;
     }
 
     @Override
@@ -50,5 +60,14 @@ public class FileContentUpdateEvent extends GwtEvent<FileContentUpdateHandler> {
      */
     public String getFilePath() {
         return filePath;
+    }
+
+    /**
+     * Returns content's stamp of the file that had changes.
+     *
+     * @return the path
+     */
+    public String getModificationStamp() {
+        return modificationStamp;
     }
 }

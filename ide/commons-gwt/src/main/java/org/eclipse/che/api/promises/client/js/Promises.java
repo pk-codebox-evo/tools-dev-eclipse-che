@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012-2016 Codenvy, S.A.
+ * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -43,6 +43,19 @@ public final class Promises {
     public static final native <V> JsPromise<V> create(Executor<V> conclusion) /*-{
         return new Promise(conclusion);
     }-*/;
+
+    /**
+     * Creates a new promise using the provided executor body.
+     *
+     * @param conclusion
+     *         the executor body
+     * @param <V>
+     *         the type of the promised value
+     * @return a promise
+     */
+    public static final <V> JsPromise<V> create(Executor.ExecutorBody<V> conclusion) {
+        return create(Executor.create(conclusion));
+    }
 
     /**
      * Creates a promise that resolves as soon as all the promises used as parameters are resolved or
